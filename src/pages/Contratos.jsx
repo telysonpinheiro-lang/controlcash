@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useData } from '../context/DataContext'
 import { useToast } from '../context/ToastContext'
 import Modal from '../components/Modal'
@@ -126,7 +126,24 @@ export default function Contratos() {
 
   const pgContratos = usePagination(contratos)
   const contratoPreviewed = preview ?? contratos[0]
-  const [autentiqueLoading, setAutentiqueLoading] = useState(null) // contrato.id em loading
+  const [autentiqueLoading, setAutentiqueLoading] = useState(null)
+
+  // Auto-verifica status dos contratos pendentes na Autentique ao carregar
+  const verificouRef = useRef(false)
+  useEffect(() => {
+    if (verificouRef.current || !contratos.length) return
+    verificouRef.current = true
+    contratos.forEach(async c => {
+      if (c.autentique_id && c.status !== 'aceito') {
+        try {
+          const res = await contratosApi.statusAutentique(c.id)
+          if (res.assinado) {
+            updateContrato(c.id, { ...c, status: 'aceito' })
+          }
+        } catch {}
+      }
+    })
+  }, [contratos])
 
   async function enviarParaAutentique(contrato) {
     const cl = clientes.find(x => x.nome === contrato.cliente)
@@ -172,6 +189,8 @@ export default function Contratos() {
       const res = await contratosApi.statusAutentique(c.id)
       if (res.assinado) {
         showToast(`Contrato de ${c.cliente} foi ASSINADO!`, 'success')
+        // Atualiza no frontend imediatamente
+        updateContrato(c.id, { ...c, status: 'aceito' })
       } else {
         showToast('Aguardando assinatura do cliente...', 'info')
       }
