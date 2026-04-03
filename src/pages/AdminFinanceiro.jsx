@@ -253,7 +253,7 @@ export default function AdminFinanceiro() {
         </div>
 
         {/* Resumo de clientes por plano */}
-        <div className="card">
+        <div className="card" style={{ marginTop: 16 }}>
           <div className="card-header"><div className="card-title">Clientes por Plano</div></div>
           <div className="table-wrap">
             <table>
