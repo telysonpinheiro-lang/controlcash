@@ -156,8 +156,14 @@ switch ($method) {
         $pdo->prepare('DELETE FROM admin_cobrancas WHERE admin_cliente_id = ?')->execute([$id]);
         $pdo->prepare('DELETE FROM admin_clientes WHERE id = ?')->execute([$id]);
         if ($c && $c['usuario_id']) {
-            $pdo->prepare('DELETE FROM notificacoes WHERE usuario_id = ?')->execute([$c['usuario_id']]);
-            $pdo->prepare('DELETE FROM usuarios WHERE id = ?')->execute([$c['usuario_id']]);
+            // Não deletar usuários admin
+            $chkAdmin = $pdo->prepare("SELECT role, plano FROM usuarios WHERE id = ?");
+            $chkAdmin->execute([$c['usuario_id']]);
+            $uAdm = $chkAdmin->fetch();
+            if (!$uAdm || ($uAdm['role'] !== 'admin' && $uAdm['plano'] !== 'admin')) {
+                $pdo->prepare('DELETE FROM notificacoes WHERE usuario_id = ?')->execute([$c['usuario_id']]);
+                $pdo->prepare('DELETE FROM usuarios WHERE id = ?')->execute([$c['usuario_id']]);
+            }
         }
 
         echo json_encode(['ok' => true]);
