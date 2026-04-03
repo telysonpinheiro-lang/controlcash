@@ -30,12 +30,12 @@ switch ($method) {
             exit;
         }
 
-        // Verifica se e-mail já existe
-        $chk = $pdo->prepare('SELECT id FROM usuarios WHERE email = ?');
-        $chk->execute([$data['email_contato']]);
-        if ($chk->fetch()) {
+        // Verifica se já existe admin_cliente com este email
+        $chkCli = $pdo->prepare('SELECT id FROM admin_clientes WHERE email_contato = ?');
+        $chkCli->execute([$data['email_contato']]);
+        if ($chkCli->fetch()) {
             http_response_code(409);
-            echo json_encode(['error' => 'E-mail já cadastrado no sistema']);
+            echo json_encode(['error' => 'Já existe um cliente com este e-mail']);
             exit;
         }
 
@@ -47,17 +47,31 @@ switch ($method) {
         $tempSenha = strtoupper(substr(str_replace(['+','/','='], '', base64_encode(random_bytes(8))), 0, 8));
         $hash      = password_hash($tempSenha, PASSWORD_BCRYPT);
 
-        // Cria usuário
-        $pdo->prepare('
-            INSERT INTO usuarios (email, senha, nome, role, plano)
-            VALUES (:email, :senha, :nome, "user", :plano)
-        ')->execute([
-            'email' => $data['email_contato'],
-            'senha' => $hash,
-            'nome'  => $data['contato'],
-            'plano' => $plano,
-        ]);
-        $uid = $pdo->lastInsertId();
+        // Cria ou reutiliza usuário
+        $chkUser = $pdo->prepare('SELECT id FROM usuarios WHERE email = ?');
+        $chkUser->execute([$data['email_contato']]);
+        $existente = $chkUser->fetch();
+
+        if ($existente) {
+            // Reutiliza usuario existente — reseta senha
+            $uid = $existente['id'];
+            $pdo->prepare('UPDATE usuarios SET senha = ?, nome = ?, plano = ?, ativo = 1 WHERE id = ?')
+                ->execute([$hash, $data['contato'], $plano, $uid]);
+        } else {
+            // Cria novo usuario
+            $usuario = strtolower(explode('@', $data['email_contato'])[0]);
+            $pdo->prepare('
+                INSERT INTO usuarios (email, usuario, senha, nome, role, plano, ativo)
+                VALUES (:email, :usuario, :senha, :nome, "user", :plano, 1)
+            ')->execute([
+                'email'   => $data['email_contato'],
+                'usuario' => $usuario,
+                'senha'   => $hash,
+                'nome'    => $data['contato'],
+                'plano'   => $plano,
+            ]);
+            $uid = $pdo->lastInsertId();
+        }
 
         // Cria admin_cliente
         $pdo->prepare('
