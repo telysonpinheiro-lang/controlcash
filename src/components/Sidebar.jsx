@@ -111,7 +111,7 @@ export default function Sidebar({ notificationBell }) {
         <div className="sidebar-brand-icon" style={{ width: 28, height: 28 }}>
           <IconLogo />
         </div>
-        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--purple-d)' }}>CONTROLCASH</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--purple-d)' }}>ControlCa$h</span>
       </div>
       <div className="mobile-topbar-right">
         {notificationBell}
@@ -189,8 +189,8 @@ export default function Sidebar({ notificationBell }) {
             <IconLogo />
           </div>
           <div>
-            <div className="sidebar-brand-name">CONTROLCASH</div>
-            <div className="sidebar-brand-tag">Gestão</div>
+            <div className="sidebar-brand-name">ControlCa$h</div>
+            <div className="sidebar-brand-tag">by Virtual Core</div>
           </div>
         </div>
       </div>
@@ -198,7 +198,7 @@ export default function Sidebar({ notificationBell }) {
       <div className="sidebar-user">
         <div className="sidebar-user-name">{currentUser?.nome}</div>
         <div className="sidebar-user-role">
-          {currentUser?.plano === 'admin'        ? 'Administrador · ControlCash'
+          {currentUser?.plano === 'admin'        ? 'Administrador · ControlCa$h'
             : currentUser?.plano === 'business'     ? 'Plano Business'
             : currentUser?.plano === 'profissional' ? 'Plano Profissional'
             : 'Plano Essencial'}

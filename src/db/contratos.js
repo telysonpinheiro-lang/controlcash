@@ -47,6 +47,6 @@ export const contratos = [
 ]
 
 export const empresaContratante = {
-  nome: 'ControlCash Tecnologia',
+  nome: 'ControlCa$h by Virtual Core',
   cnpj: '00.000.000/0001-00',
 }

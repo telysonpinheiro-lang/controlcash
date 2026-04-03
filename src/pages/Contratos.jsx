@@ -33,7 +33,7 @@ VALOR: R$ {{valor}}{{parcelas}}
 
 Ambas as partes concordam com os termos acima mediante aceite eletrônico registrado.
 
-Aceito eletronicamente em: _________ · IP: xxx.xxx.x.x · ControlCash Gestão v1.0`
+Aceito eletronicamente em: _________ · IP: xxx.xxx.x.x · ControlCa$h by Virtual Core v1.0`
 
 function renderTemplate(template, contrato, clientesList) {
   const valor = Number(contrato.valor ?? 0).toFixed(2).replace('.', ',')

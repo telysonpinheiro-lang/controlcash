@@ -54,7 +54,7 @@ export default function AdminFinanceiro() {
   }, [cobrancas])
 
   const nomeEmpresa = (() => {
-    try { return JSON.parse(localStorage.getItem('vc_empresa'))?.nome ?? 'ControlCash' } catch { return 'ControlCash' }
+    try { return JSON.parse(localStorage.getItem('vc_empresa'))?.nome ?? 'ControlCa$h' } catch { return 'ControlCa$h' }
   })()
 
   function montarMsgCobranca(cliente, valor, mes) {

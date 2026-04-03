@@ -17,7 +17,7 @@ export async function exportPDF(rows, nome = 'exportacao', colunas, cabecalhos, 
   // Cabeçalho do documento
   doc.setFontSize(14)
   doc.setTextColor(124, 58, 237) // purple
-  doc.text('ControlCash Gestão', 14, 15)
+  doc.text('ControlCa$h by Virtual Core', 14, 15)
 
   doc.setFontSize(11)
   doc.setTextColor(60, 60, 60)

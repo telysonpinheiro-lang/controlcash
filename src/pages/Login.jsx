@@ -46,11 +46,11 @@ export default function Login() {
           </div>
           <div>
             <div className="login-logo-name">{nome.toUpperCase().slice(0, 20)}</div>
-            <div className="login-logo-tag">Sistema de Gestão</div>
+            <div className="login-logo-tag">by Virtual Core</div>
           </div>
         </div>
         <div className="login-title">Entrar na sua conta</div>
-        <div className="login-sub">Acesse seu painel de gestão</div>
+        <div className="login-sub">Acesse seu painel de controle</div>
 
         <div className="form-group">
           <label className="form-label">Usuário</label>

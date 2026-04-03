@@ -6,8 +6,8 @@ const EMPRESA_KEY = 'vc_empresa'
 const LOGO_KEY    = 'vc_logo'
 
 function loadEmpresa() {
-  try { return JSON.parse(localStorage.getItem(EMPRESA_KEY)) ?? { nome: 'ControlCash Tecnologia', cnpj: '00.000.000/0001-00' } }
-  catch { return { nome: 'ControlCash Tecnologia', cnpj: '00.000.000/0001-00' } }
+  try { return JSON.parse(localStorage.getItem(EMPRESA_KEY)) ?? { nome: 'ControlCa$h by Virtual Core', cnpj: '00.000.000/0001-00' } }
+  catch { return { nome: 'ControlCa$h by Virtual Core', cnpj: '00.000.000/0001-00' } }
 }
 
 const temas = [
@@ -105,7 +105,7 @@ export default function Configuracoes() {
                   className="form-input"
                   value={empresa.nome}
                   onChange={e => setEmpresa({ ...empresa, nome: e.target.value })}
-                  placeholder="Ex: ControlCash Tecnologia"
+                  placeholder="Ex: ControlCa$h by Virtual Core"
                 />
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
