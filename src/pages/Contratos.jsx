@@ -136,13 +136,34 @@ export default function Contratos() {
     setAutentiqueLoading(true)
     try {
       const res = await contratosApi.enviarAutentique(contrato.id, email)
-      showToast('Contrato enviado para assinatura na Autentique!', 'success')
-      if (res.autentique_link) {
-        window.open(res.autentique_link, '_blank')
-      }
+      showToast('Contrato enviado! Abrindo WhatsApp...', 'success')
       setAutentiqueModal(null)
       // Atualiza contrato local
       updateContrato(contrato.id, { ...contrato, autentique_id: res.autentique_id, autentique_link: res.autentique_link, status: 'aguardando' })
+
+      // Abre WhatsApp automaticamente com o link da Autentique
+      if (res.autentique_link) {
+        const cl = clientes.find(x => x.nome === contrato.cliente)
+        const tel = cl?.telefone?.replace(/\D/g, '')
+        if (tel) {
+          const num = tel.length <= 11 ? '55' + tel : tel
+          const msg = [
+            `Olá ${contrato.cliente.split(' ')[0]}! 👋`,
+            ``,
+            `Segue o contrato referente ao serviço *${contrato.servico}* no valor de *R$ ${Number(contrato.valor).toFixed(2).replace('.', ',')}*.`,
+            ``,
+            `Assine eletronicamente pelo link abaixo:`,
+            res.autentique_link,
+            ``,
+            `Qualquer dúvida, estou à disposição!`,
+          ].join('\n')
+          window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank')
+        } else {
+          // Sem telefone: copia o link
+          navigator.clipboard.writeText(res.autentique_link).catch(() => {})
+          showToast('Link copiado! Telefone não cadastrado para enviar via WhatsApp.', 'info')
+        }
+      }
     } catch (e) {
       showToast(e.message, 'danger')
     } finally {
