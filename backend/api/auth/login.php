@@ -38,7 +38,7 @@ try {
     $stmtRate = $pdo->prepare('
         SELECT COUNT(*) AS tentativas
         FROM login_attempts
-        WHERE ip = ? AND tentativa_em > DATE_SUB(NOW(), INTERVAL 15 MINUTE)
+        WHERE ip = ? AND sucesso = 0 AND tentativa_em > DATE_SUB(NOW(), INTERVAL 15 MINUTE)
     ');
     $stmtRate->execute([$ip]);
     $tentativas = (int) $stmtRate->fetchColumn();
