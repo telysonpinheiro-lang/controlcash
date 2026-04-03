@@ -3,6 +3,7 @@ import { useData } from '../context/DataContext'
 import { useToast } from '../context/ToastContext'
 import Modal from '../components/Modal'
 import Pagination, { usePagination } from '../components/Pagination'
+import { contratosApi } from '../services/api'
 import { empresaContratante } from '../db/contratos'
 
 const PLACEHOLDERS = [
@@ -125,6 +126,42 @@ export default function Contratos() {
 
   const pgContratos = usePagination(contratos)
   const contratoPreviewed = preview ?? contratos[0]
+  const [autentiqueLoading, setAutentiqueLoading] = useState(false)
+  const [autentiqueModal, setAutentiqueModal] = useState(null) // { contrato, email }
+
+  async function enviarParaAutentique() {
+    if (!autentiqueModal) return
+    const { contrato, email } = autentiqueModal
+    if (!email) return showToast('E-mail do cliente é obrigatório', 'danger')
+    setAutentiqueLoading(true)
+    try {
+      const res = await contratosApi.enviarAutentique(contrato.id, email)
+      showToast('Contrato enviado para assinatura na Autentique!', 'success')
+      if (res.autentique_link) {
+        window.open(res.autentique_link, '_blank')
+      }
+      setAutentiqueModal(null)
+      // Atualiza contrato local
+      updateContrato(contrato.id, { ...contrato, autentique_id: res.autentique_id, autentique_link: res.autentique_link, status: 'aguardando' })
+    } catch (e) {
+      showToast(e.message, 'danger')
+    } finally {
+      setAutentiqueLoading(false)
+    }
+  }
+
+  async function verificarAssinatura(c) {
+    try {
+      const res = await contratosApi.statusAutentique(c.id)
+      if (res.assinado) {
+        showToast(`Contrato de ${c.cliente} foi ASSINADO!`, 'success')
+      } else {
+        showToast('Aguardando assinatura do cliente...', 'info')
+      }
+    } catch (e) {
+      showToast(e.message, 'danger')
+    }
+  }
 
   function abrirEdicao(c) {
     setEditando(c)
@@ -359,6 +396,24 @@ export default function Contratos() {
                               <WaIcon /> Link
                             </span>
                           )}
+                          {c.status !== 'aceito' && !c.autentique_id && (
+                            <button title="Enviar para Autentique" className="btn btn-sm btn-outline" style={{ fontSize: 10, padding: '2px 8px' }}
+                              onClick={e => { e.stopPropagation(); const cl = clientes.find(x => x.nome === c.cliente); setAutentiqueModal({ contrato: c, email: cl?.email || '' }) }}>
+                              Autentique
+                            </button>
+                          )}
+                          {c.autentique_id && c.status !== 'aceito' && (
+                            <button title="Verificar assinatura" className="btn btn-sm btn-success" style={{ fontSize: 10, padding: '2px 8px' }}
+                              onClick={e => { e.stopPropagation(); verificarAssinatura(c) }}>
+                              Verificar
+                            </button>
+                          )}
+                          {c.autentique_link && (
+                            <a href={c.autentique_link} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline" style={{ fontSize: 10, padding: '2px 8px' }}
+                              onClick={e => e.stopPropagation()}>
+                              Assinar
+                            </a>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -461,6 +516,36 @@ export default function Contratos() {
             <button className="btn btn-primary btn-sm" onClick={salvarTemplate}>Salvar template</button>
           </div>
         </div>
+      </Modal>
+
+      {/* Modal Autentique */}
+      <Modal title="Enviar para Autentique" open={!!autentiqueModal} onClose={() => setAutentiqueModal(null)}>
+        {autentiqueModal && (
+          <>
+            <div style={{ marginBottom: 12, padding: '10px 14px', background: 'var(--bg4)', borderRadius: 'var(--radius)', fontSize: 13 }}>
+              Contrato: <strong>{autentiqueModal.contrato.cliente}</strong> — {autentiqueModal.contrato.servico}
+            </div>
+            <div className="form-group">
+              <label className="form-label">E-mail do cliente (para receber o link de assinatura)</label>
+              <input
+                className="form-input"
+                type="email"
+                placeholder="cliente@email.com"
+                value={autentiqueModal.email}
+                onChange={e => setAutentiqueModal({ ...autentiqueModal, email: e.target.value })}
+              />
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text-s)', marginBottom: 12 }}>
+              O cliente receberá um e-mail da Autentique com o link para assinar o contrato eletronicamente.
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-outline btn-sm" onClick={() => setAutentiqueModal(null)}>Cancelar</button>
+              <button className="btn btn-primary btn-sm" disabled={autentiqueLoading} onClick={enviarParaAutentique}>
+                {autentiqueLoading ? 'Enviando...' : 'Enviar para Assinatura'}
+              </button>
+            </div>
+          </>
+        )}
       </Modal>
     </div>
   )

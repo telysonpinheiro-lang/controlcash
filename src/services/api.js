@@ -86,6 +86,11 @@ export const contratosApi = {
   create: (data)       => request('/contratos/index.php', { method: 'POST', body: JSON.stringify(data) }),
   update: (id, data)   => request(`/contratos/index.php?id=${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   remove: (id)         => request(`/contratos/index.php?id=${id}`, { method: 'DELETE' }),
+  // Autentique
+  enviarAutentique: (contrato_id, email) =>
+    request('/contratos/autentique.php', { method: 'POST', body: JSON.stringify({ acao: 'criar', contrato_id, email }) }),
+  statusAutentique: (contrato_id) =>
+    request(`/contratos/autentique.php?acao=status&contrato_id=${contrato_id}`),
 }
 
 // ── Cadastros ─────────────────────────────────────────────
