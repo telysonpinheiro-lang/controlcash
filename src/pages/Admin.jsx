@@ -181,7 +181,7 @@ export default function Admin() {
       <div className="topbar">
         <div>
           <div className="topbar-title">Clientes do Sistema</div>
-          <div className="topbar-sub">Painel administrativo · ControlCa$h by Virtual Core</div>
+          <div className="topbar-sub">Painel administrativo · ControlCA$H by Virtual Core</div>
         </div>
         <div className="topbar-actions">
           <button className="btn btn-primary btn-sm" onClick={abrirNovo}>+ Novo Cliente</button>

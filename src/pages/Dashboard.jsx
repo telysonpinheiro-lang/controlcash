@@ -199,7 +199,7 @@ export default function Dashboard() {
                     key={c.id}
                     nome={c.cliente_nome}
                     telefone={c.telefone}
-                    mensagem={`Olá ${c.cliente_nome?.split(' ')[0]}! Identificamos R$ ${Number(c.valor).toFixed(2)} em aberto (${c.referente}). Por favor, regularize o pagamento. — ControlCa$h`}
+                    mensagem={`Olá ${c.cliente_nome?.split(' ')[0]}! Identificamos R$ ${Number(c.valor).toFixed(2)} em aberto (${c.referente}). Por favor, regularize o pagamento. — ControlCA$H`}
                     label={`Cobrar ${c.cliente_nome?.split(' ')[0]} (R$ ${Number(c.valor).toFixed(2)})`}
                     userId={currentUser?.id}
                   />
@@ -336,7 +336,7 @@ export default function Dashboard() {
                         <WaButton
                           nome={v.cliente_nome ?? v.cliente}
                           telefone={v.telefone}
-                          mensagem={`Olá! Seu pagamento de R$ ${Number(v.valor).toFixed(2)} está vencido. Entre em contato para regularizar. — ControlCa$h`}
+                          mensagem={`Olá! Seu pagamento de R$ ${Number(v.valor).toFixed(2)} está vencido. Entre em contato para regularizar. — ControlCA$H`}
                           label="Cobrar"
                           userId={currentUser?.id}
                         />

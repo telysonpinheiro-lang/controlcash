@@ -29,7 +29,7 @@ export default function WaButton({ nome, telefone, mensagem, label }) {
       showToast(`Telefone não cadastrado para ${nome}`, 'danger')
       return
     }
-    const texto = mensagem ?? `Olá ${nome}! Identificamos uma cobrança em aberto. Por favor, entre em contato para regularizar. — ControlCa$h`
+    const texto = mensagem ?? `Olá ${nome}! Identificamos uma cobrança em aberto. Por favor, entre em contato para regularizar. — ControlCA$H`
     abrirWhatsApp(tel, texto)
   }
 

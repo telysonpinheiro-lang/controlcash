@@ -6,13 +6,13 @@ const EMPRESA_KEY = 'vc_empresa'
 export default function useEmpresaConfig() {
   const [logo, setLogo] = useState(() => localStorage.getItem(LOGO_KEY))
   const [nome, setNome] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(EMPRESA_KEY))?.nome ?? 'ControlCa$h' } catch { return 'ControlCa$h' }
+    try { return JSON.parse(localStorage.getItem(EMPRESA_KEY))?.nome ?? 'ControlCA$H' } catch { return 'ControlCA$H' }
   })
 
   useEffect(() => {
     const handler = () => {
       setLogo(localStorage.getItem(LOGO_KEY))
-      try { setNome(JSON.parse(localStorage.getItem(EMPRESA_KEY))?.nome ?? 'ControlCa$h') } catch {}
+      try { setNome(JSON.parse(localStorage.getItem(EMPRESA_KEY))?.nome ?? 'ControlCA$H') } catch {}
     }
     window.addEventListener('vc-empresa-updated', handler)
     return () => window.removeEventListener('vc-empresa-updated', handler)
