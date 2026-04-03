@@ -126,24 +126,21 @@ export default function Contratos() {
 
   const pgContratos = usePagination(contratos)
   const contratoPreviewed = preview ?? contratos[0]
-  const [autentiqueLoading, setAutentiqueLoading] = useState(false)
-  const [autentiqueModal, setAutentiqueModal] = useState(null) // { contrato, email }
+  const [autentiqueLoading, setAutentiqueLoading] = useState(null) // contrato.id em loading
 
-  async function enviarParaAutentique() {
-    if (!autentiqueModal) return
-    const { contrato, email } = autentiqueModal
-    if (!email) return showToast('E-mail do cliente é obrigatório', 'danger')
-    setAutentiqueLoading(true)
+  async function enviarParaAutentique(contrato) {
+    const cl = clientes.find(x => x.nome === contrato.cliente)
+    const email = cl?.email || ''
+    if (!email) return showToast(`E-mail não cadastrado para ${contrato.cliente}. Cadastre em Cadastros > Clientes.`, 'danger')
+
+    setAutentiqueLoading(contrato.id)
     try {
       const res = await contratosApi.enviarAutentique(contrato.id, email)
       showToast('Contrato enviado! Abrindo WhatsApp...', 'success')
-      setAutentiqueModal(null)
-      // Atualiza contrato local
       updateContrato(contrato.id, { ...contrato, autentique_id: res.autentique_id, autentique_link: res.autentique_link, status: 'aguardando' })
 
       // Abre WhatsApp automaticamente com o link da Autentique
       if (res.autentique_link) {
-        const cl = clientes.find(x => x.nome === contrato.cliente)
         const tel = cl?.telefone?.replace(/\D/g, '')
         if (tel) {
           const num = tel.length <= 11 ? '55' + tel : tel
@@ -159,7 +156,6 @@ export default function Contratos() {
           ].join('\n')
           window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank')
         } else {
-          // Sem telefone: copia o link
           navigator.clipboard.writeText(res.autentique_link).catch(() => {})
           showToast('Link copiado! Telefone não cadastrado para enviar via WhatsApp.', 'info')
         }
@@ -167,7 +163,7 @@ export default function Contratos() {
     } catch (e) {
       showToast(e.message, 'danger')
     } finally {
-      setAutentiqueLoading(false)
+      setAutentiqueLoading(null)
     }
   }
 
@@ -413,16 +409,19 @@ export default function Contratos() {
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:14,height:14}}><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
                           </button>
                           {c.status !== 'aceito' && !c.autentique_id && (
-                            <button title="Enviar para Autentique" className="btn btn-sm btn-outline" style={{ fontSize: 10, padding: '2px 8px' }}
-                              onClick={e => { e.stopPropagation(); const cl = clientes.find(x => x.nome === c.cliente); setAutentiqueModal({ contrato: c, email: cl?.email || '' }) }}>
-                              Autentique
+                            <button title="Enviar para assinatura via Autentique + WhatsApp" className="btn btn-sm btn-outline" style={{ fontSize: 10, padding: '2px 8px' }}
+                              disabled={autentiqueLoading === c.id}
+                              onClick={e => { e.stopPropagation(); enviarParaAutentique(c) }}>
+                              {autentiqueLoading === c.id ? 'Enviando...' : 'Autentique'}
                             </button>
                           )}
-                          {c.autentique_id && c.status !== 'aceito' && (
-                            <button title="Verificar assinatura" className="btn btn-sm btn-success" style={{ fontSize: 10, padding: '2px 8px' }}
-                              onClick={e => { e.stopPropagation(); verificarAssinatura(c) }}>
-                              Verificar
-                            </button>
+                          {c.autentique_id && (
+                            <span className={`status ${c.status === 'aceito' ? 'status-concluido' : 'status-pendente'}`}
+                              style={{ cursor: c.status !== 'aceito' ? 'pointer' : 'default', fontSize: 10 }}
+                              onClick={e => { e.stopPropagation(); if (c.status !== 'aceito') verificarAssinatura(c) }}
+                              title={c.status !== 'aceito' ? 'Clique para verificar' : ''}>
+                              {c.status === 'aceito' ? 'Assinado' : 'Aguardando assinatura'}
+                            </span>
                           )}
                           {c.status !== 'aceito' && (
                             <span className="wa-chip" onClick={e => {
@@ -551,35 +550,6 @@ export default function Contratos() {
         </div>
       </Modal>
 
-      {/* Modal Autentique */}
-      <Modal title="Enviar para Autentique" open={!!autentiqueModal} onClose={() => setAutentiqueModal(null)}>
-        {autentiqueModal && (
-          <>
-            <div style={{ marginBottom: 12, padding: '10px 14px', background: 'var(--bg4)', borderRadius: 'var(--radius)', fontSize: 13 }}>
-              Contrato: <strong>{autentiqueModal.contrato.cliente}</strong> — {autentiqueModal.contrato.servico}
-            </div>
-            <div className="form-group">
-              <label className="form-label">E-mail do cliente (para receber o link de assinatura)</label>
-              <input
-                className="form-input"
-                type="email"
-                placeholder="cliente@email.com"
-                value={autentiqueModal.email}
-                onChange={e => setAutentiqueModal({ ...autentiqueModal, email: e.target.value })}
-              />
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--text-s)', marginBottom: 12 }}>
-              O cliente receberá um e-mail da Autentique com o link para assinar o contrato eletronicamente.
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-outline btn-sm" onClick={() => setAutentiqueModal(null)}>Cancelar</button>
-              <button className="btn btn-primary btn-sm" disabled={autentiqueLoading} onClick={enviarParaAutentique}>
-                {autentiqueLoading ? 'Enviando...' : 'Enviar para Assinatura'}
-              </button>
-            </div>
-          </>
-        )}
-      </Modal>
     </div>
   )
 }
