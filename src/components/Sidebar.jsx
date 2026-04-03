@@ -145,7 +145,7 @@ export default function Sidebar({ notificationBell }) {
           <NavLink to="/relatorios" className={navItem} onClick={navClick}><IconRelatorio /> Inadimplência</NavLink>
         )}
 
-        {currentUser?.role === 'admin' && (
+        {currentUser?.role === 'admin' && currentUser?.plano === 'admin' && (
           <>
             <div className="nav-section">Administração</div>
             <NavLink to="/admin" end className={navItem} onClick={navClick}><IconAdmin /> Clientes do Sistema</NavLink>
@@ -247,8 +247,8 @@ export default function Sidebar({ notificationBell }) {
           </NavLink>
         )}
 
-        {/* ── Administração — só admin ── */}
-        {currentUser?.role === 'admin' && (
+        {/* ── Administração — só plano admin ── */}
+        {currentUser?.role === 'admin' && currentUser?.plano === 'admin' && (
           <>
             <div className="nav-section">Administração</div>
             <NavLink to="/admin" end className={navItem}>

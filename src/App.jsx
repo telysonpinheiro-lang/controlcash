@@ -66,7 +66,7 @@ function ProtectedRoute() {
 function AdminRoute() {
   const { currentUser } = useAuth()
   if (!currentUser) return <Navigate to="/login" replace />
-  if (currentUser.role !== 'admin') return <Navigate to="/dashboard" replace />
+  if (currentUser.role !== 'admin' || currentUser.plano !== 'admin') return <Navigate to="/dashboard" replace />
   return <Outlet />
 }
 
