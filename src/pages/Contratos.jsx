@@ -7,9 +7,11 @@ import { contratosApi } from '../services/api'
 import { empresaContratante } from '../db/contratos'
 
 const PLACEHOLDERS = [
-  ['{{cliente}}','Cliente'],['{{cpf}}','CPF'],['{{telefone}}','Telefone'],['{{endereco}}','Endereço'],
-  ['{{empresa}}','Empresa'],['{{cnpj}}','CNPJ'],['{{objeto}}','Objeto'],
-  ['{{valor}}','Valor'],['{{parcelas}}','Parcelas'],['{{prazo}}','Prazo'],['{{garantia}}','Garantia'],
+  ['{{cliente}}','Contratante'],['{{cpf_cliente}}','CPF/CNPJ Contratante'],['{{telefone}}','Telefone'],['{{endereco}}','Endereço Contratante'],
+  ['{{empresa}}','Contratado'],['{{cnpj}}','CNPJ Contratado'],['{{endereco_empresa}}','Endereço Contratado'],
+  ['{{representante}}','Representante'],['{{cpf_representante}}','CPF Representante'],
+  ['{{objeto}}','Objeto/Serviço'],['{{valor}}','Valor'],['{{parcelas}}','Parcelas'],
+  ['{{prazo}}','Prazo'],['{{garantia}}','Garantia'],['{{foro}}','Foro'],['{{data}}','Data'],
 ]
 
 const WaIcon = () => (
@@ -22,18 +24,88 @@ const TEMPLATE_KEY = 'vc_contrato_template'
 
 const TEMPLATE_PADRAO = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS
 
-CONTRATANTE: {{cliente}}{{cpf}}{{endereco}}.
-CONTRATADA: {{empresa}}, CNPJ {{cnpj}}.
+CONTRATANTE: {{cliente}}{{cpf_cliente}}{{endereco}}.
+CONTRATADO: {{empresa}}, empresa inscrita no CNPJ nº {{cnpj}}, com endereço na {{endereco_empresa}}, neste ato representada por {{representante}}, CPF nº {{cpf_representante}}.
 
-OBJETO: {{objeto}}
+Têm entre si justo e contratado o seguinte:
 
-VALOR: R$ {{valor}}{{parcelas}}
+CLÁUSULA 1 – DO OBJETO
+1.1. O presente contrato tem por objeto a prestação de serviços técnicos especializados de {{objeto}}, na empresa e endereço do CONTRATANTE acima qualificado, compreendendo os itens e condições descritos na proposta comercial vinculada.
+1.2. Qualquer serviço não previsto expressamente neste contrato não está incluído no preço e dependerá de autorização prévia e expressa do CONTRATANTE.
 
-{{prazo}}{{garantia}}
+CLÁUSULA 2 – DAS OBRIGAÇÕES DO CONTRATADO
+2.1. Constituem obrigações do CONTRATADO:
+a) Executar os serviços com observância das normas técnicas aplicáveis, boas práticas profissionais e padrões mínimos de segurança;
+b) Entregar o sistema em funcionamento regular;
+c) Prestar orientações básicas de uso ao CONTRATANTE;
+d) Responder exclusivamente por vícios de execução, nos limites deste contrato.
+2.2. O CONTRATADO não garante continuidade de funcionamento em razão de fatores externos, tais como falhas elétricas, oscilações de energia, internet, interferência de terceiros ou eventos de força maior.
 
-Ambas as partes concordam com os termos acima mediante aceite eletrônico registrado.
+CLÁUSULA 3 – DAS OBRIGAÇÕES DO CONTRATANTE
+3.1. São obrigações do CONTRATANTE:
+a) Assegurar livre acesso ao local;
+b) Disponibilizar condições adequadas para execução do serviço;
+c) Efetuar os pagamentos rigorosamente nos prazos ajustados;
+d) Não permitir intervenções de terceiros no sistema sem autorização do CONTRATADO.
 
-Aceito eletronicamente em: _________ · IP: xxx.xxx.x.x · ControlCA$H by Virtual Core v1.0`
+CLÁUSULA 4 – DO PREÇO E DAS CONDIÇÕES DE PAGAMENTO
+4.1. O valor total do contrato é de R$ {{valor}}{{parcelas}}.
+
+CLÁUSULA 5 – DA INADIMPLÊNCIA E CLÁUSULA PENAL
+5.1. O atraso no pagamento de qualquer valor implicará, independentemente de notificação:
+a) Multa moratória de 10% (dez por cento) sobre o valor devido;
+b) Juros de 1% (um por cento) ao mês, pro rata die;
+c) Correção monetária pelo índice legal aplicável.
+5.2. Persistindo o inadimplemento por mais de 10 (dez) dias, poderá o CONTRATADO:
+a) Suspender o funcionamento do sistema, sem que isso configure ilícito;
+b) Reter equipamentos e configurações, até a quitação integral;
+c) Considerar o contrato rescindido, com vencimento antecipado do saldo.
+
+CLÁUSULA 6 – DO PRAZO E MULTA POR ATRASO
+6.1. O prazo máximo para execução dos serviços será de {{prazo}}.
+6.2. O atraso injustificado sujeitará o CONTRATADO à multa diária de 1% (um por cento) sobre o valor do contrato, limitada a 20% (vinte por cento).
+
+CLÁUSULA 7 – DA GARANTIA
+7.1. O CONTRATADO concede garantia de {{garantia}} sobre os serviços executados.
+7.2. A garantia não cobre defeitos decorrentes de mau uso, falhas elétricas, eventos externos ou intervenção de terceiros.
+
+CLÁUSULA 8 – DA LIMITAÇÃO DE RESPONSABILIDADE
+8.1. A responsabilidade do CONTRATADO limita-se exclusivamente ao valor total deste contrato.
+8.2. Ficam expressamente excluídos:
+a) Lucros cessantes;
+b) Danos indiretos;
+c) Perda de chance;
+d) Danos decorrentes de falhas de segurança externa.
+
+CLÁUSULA 9 – DA CONFIDENCIALIDADE E USO DE IMAGENS
+9.1. As partes comprometem-se a manter sigilo absoluto sobre dados, imagens, acessos e informações obtidas em razão do contrato.
+9.2. O CONTRATADO não se responsabiliza pelo uso ou armazenamento das imagens pelo CONTRATANTE.
+
+CLÁUSULA 10 – DA RESCISÃO
+10.1. O presente contrato poderá ser rescindido a qualquer tempo por inadimplemento, infração contratual, desistência imotivada ou por mútuo acordo entre as partes.
+10.2. Em caso de rescisão por culpa ou iniciativa do CONTRATANTE, não haverá devolução de quaisquer valores já pagos, os quais serão retidos pelo CONTRATADO a título de cláusula penal compensatória, nos termos dos artigos 408, 409 e 416 do Código Civil.
+10.3. Além da retenção prevista no item anterior, ocorrendo a desistência imotivada do contrato por parte do CONTRATANTE, este ficará obrigado ao pagamento de multa rescisória equivalente a 20% (vinte por cento) do valor total do contrato.
+10.4. A multa prevista nesta cláusula não afasta o direito do CONTRATADO de pleitear indenização suplementar, caso comprovados prejuízos superiores, nos termos do artigo 416, parágrafo único, do Código Civil.
+
+CLÁUSULA 11 – DO TÍTULO EXECUTIVO EXTRAJUDICIAL
+11.1. O presente contrato constitui título executivo extrajudicial, nos termos do art. 784, III, do Código de Processo Civil, podendo ser executado independentemente de interpelação judicial.
+
+CLÁUSULA 12 – DO FORO
+12.1. Fica eleito o Foro da Comarca de {{foro}}, com renúncia expressa a qualquer outro.
+
+E, por estarem justas e contratadas, firmam o presente instrumento em duas vias de igual teor.
+
+{{foro}}, {{data}}.
+
+CONTRATANTE: _______________________________________________________________.
+
+CONTRATADO / REPRESENTANTE: ________________________________________________.
+
+Testemunha 1 ________________________________________________________________.
+                          CPF:
+
+Testemunha 2 ________________________________________________________________.
+                          CPF:`
 
 function renderTemplate(template, contrato, clientesList) {
   const valor = Number(contrato.valor ?? 0).toFixed(2).replace('.', ',')
@@ -42,19 +114,26 @@ function renderTemplate(template, contrato, clientesList) {
     : ''
   const clienteCad = (clientesList ?? []).find(c => c.nome === contrato.cliente)
   const telefone = contrato.telefone ?? clienteCad?.telefone ?? ''
+  const endereco = contrato.endereco ?? clienteCad?.endereco ?? [clienteCad?.rua, clienteCad?.bairro, clienteCad?.cidade, clienteCad?.cep].filter(Boolean).join(', ')
+  const hoje = new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })
 
   return template
-    .replace('{{cliente}}', contrato.cliente ?? '')
-    .replace('{{cpf}}', contrato.cpf ? `, CPF ${contrato.cpf}` : '')
-    .replace('{{telefone}}', telefone ? `, Tel: ${telefone}` : '')
-    .replace('{{endereco}}', contrato.endereco ? `, residente em ${contrato.endereco}` : '')
-    .replace('{{empresa}}', empresaContratante.nome)
-    .replace('{{cnpj}}', empresaContratante.cnpj)
-    .replace('{{objeto}}', contrato.descricao_servico ?? contrato.descricaoServico ?? contrato.servico ?? '')
-    .replace('{{valor}}', valor)
-    .replace('{{parcelas}}', parcelas ? `${parcelas}.` : '.')
-    .replace('{{prazo}}', contrato.prazo ? `PRAZO: ${contrato.prazo}.\n\n` : '')
-    .replace('{{garantia}}', contrato.garantia ? `GARANTIA: ${contrato.garantia}\n\n` : '')
+    .replace(/\{\{cliente\}\}/g, contrato.cliente ?? '')
+    .replace(/\{\{cpf_cliente\}\}/g, contrato.cpf ? `, inscrito(a) no CPF/CNPJ nº ${contrato.cpf}` : '')
+    .replace(/\{\{telefone\}\}/g, telefone ? `, Telefone: ${telefone}` : '')
+    .replace(/\{\{endereco\}\}/g, endereco ? `, com endereço em ${endereco}` : '')
+    .replace(/\{\{empresa\}\}/g, empresaContratante.nome)
+    .replace(/\{\{cnpj\}\}/g, empresaContratante.cnpj)
+    .replace(/\{\{endereco_empresa\}\}/g, empresaContratante.endereco ?? '')
+    .replace(/\{\{representante\}\}/g, empresaContratante.representante ?? '')
+    .replace(/\{\{cpf_representante\}\}/g, empresaContratante.cpf_representante ?? '')
+    .replace(/\{\{objeto\}\}/g, contrato.descricao_servico ?? contrato.descricaoServico ?? contrato.servico ?? '')
+    .replace(/\{\{valor\}\}/g, valor)
+    .replace(/\{\{parcelas\}\}/g, parcelas ? `${parcelas}` : '')
+    .replace(/\{\{prazo\}\}/g, contrato.prazo || '___')
+    .replace(/\{\{garantia\}\}/g, contrato.garantia || '___')
+    .replace(/\{\{foro\}\}/g, empresaContratante.foro ?? 'Perdões/MG')
+    .replace(/\{\{data\}\}/g, hoje)
 }
 
 async function gerarPDF(contrato, template, clientesList) {

@@ -47,6 +47,10 @@ export const contratos = [
 ]
 
 export const empresaContratante = {
-  nome: 'ControlCA$H by Virtual Core',
-  cnpj: '00.000.000/0001-00',
+  nome: 'VANESSA APARECIDA COSTA',
+  cnpj: '49.379.114/0001-83',
+  endereco: 'Rua do Rosário, nº 113, Bairro Rosário, Perdões/MG, CEP 37260-000',
+  representante: 'Telyson Junio Pinheiro',
+  cpf_representante: '115.334.626-58',
+  foro: 'Perdões/MG',
 }
