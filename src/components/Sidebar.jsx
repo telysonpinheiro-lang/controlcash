@@ -128,20 +128,20 @@ export default function Sidebar({ notificationBell }) {
         <NavLink to="/vendas" className={navItem} onClick={navClick}><IconSales /> Vendas</NavLink>
 
         <div className="nav-section">Financeiro</div>
-        {['business','admin'].includes(currentUser?.plano) && (
+        {['empresa','admin'].includes(currentUser?.plano) && (
           <NavLink to="/pagar" className={navItem} onClick={navClick}><IconPagar /> Contas a Pagar</NavLink>
         )}
         <NavLink to="/receber" className={navItem} onClick={navClick}><IconReceber /> Contas a Receber</NavLink>
 
         <div className="nav-section">Gestão</div>
         <NavLink to="/cadastros" className={navItem} onClick={navClick}><IconCadastros /> Cadastros</NavLink>
-        {['profissional','business','admin'].includes(currentUser?.plano) && (
+        {['profissional','empresa','admin'].includes(currentUser?.plano) && (
           <NavLink to="/contratos" className={navItem} onClick={navClick}><IconContratos /> Contratos</NavLink>
         )}
-        {['profissional','business','admin'].includes(currentUser?.plano) && (
+        {['profissional','empresa','admin'].includes(currentUser?.plano) && (
           <NavLink to="/estoque" className={navItem} onClick={navClick}><IconEstoque /> Estoque</NavLink>
         )}
-        {['business','admin'].includes(currentUser?.plano) && (
+        {['empresa','admin'].includes(currentUser?.plano) && (
           <NavLink to="/relatorios" className={navItem} onClick={navClick}><IconRelatorio /> Inadimplência</NavLink>
         )}
 
@@ -199,7 +199,7 @@ export default function Sidebar({ notificationBell }) {
         <div className="sidebar-user-name">{currentUser?.nome}</div>
         <div className="sidebar-user-role">
           {currentUser?.plano === 'admin'        ? 'Administrador · ControlCA$H'
-            : currentUser?.plano === 'business'     ? 'Plano Business'
+            : currentUser?.plano === 'empresa'     ? 'Plano Empresa'
             : currentUser?.plano === 'profissional' ? 'Plano Profissional'
             : 'Plano Essencial'}
         </div>
@@ -217,7 +217,7 @@ export default function Sidebar({ notificationBell }) {
 
         {/* ── Financeiro ── */}
         <div className="nav-section">Financeiro</div>
-        {['business','admin'].includes(currentUser?.plano ?? currentUser?.role) && (
+        {['empresa','admin'].includes(currentUser?.plano ?? currentUser?.role) && (
           <NavLink to="/pagar" className={navItem}>
             <IconPagar /> Contas a Pagar
           </NavLink>
@@ -231,17 +231,17 @@ export default function Sidebar({ notificationBell }) {
         <NavLink to="/cadastros" className={navItem}>
           <IconCadastros /> Cadastros
         </NavLink>
-        {['profissional','business','admin'].includes(currentUser?.plano ?? currentUser?.role) && (
+        {['profissional','empresa','admin'].includes(currentUser?.plano ?? currentUser?.role) && (
           <NavLink to="/contratos" className={navItem}>
             <IconContratos /> Contratos
           </NavLink>
         )}
-        {['profissional','business','admin'].includes(currentUser?.plano ?? currentUser?.role) && (
+        {['profissional','empresa','admin'].includes(currentUser?.plano ?? currentUser?.role) && (
           <NavLink to="/estoque" className={navItem}>
             <IconEstoque /> Estoque
           </NavLink>
         )}
-        {['business','admin'].includes(currentUser?.plano ?? currentUser?.role) && (
+        {['empresa','admin'].includes(currentUser?.plano ?? currentUser?.role) && (
           <NavLink to="/relatorios" className={navItem}>
             <IconRelatorio /> Inadimplência
           </NavLink>

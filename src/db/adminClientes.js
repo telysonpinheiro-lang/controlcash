@@ -37,6 +37,6 @@ export const adminClientes = [
 export const planos = {
   essencial:    { label: 'Essencial',    preco: 49  },
   profissional: { label: 'Profissional', preco: 79  },
-  business:     { label: 'Business',     preco: 129 },
+  empresa:      { label: 'Empresa',      preco: 129 },
   admin:        { label: 'Admin',        preco: 0   },
 }

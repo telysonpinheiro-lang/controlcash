@@ -225,7 +225,7 @@ textarea.form-input{resize:vertical;min-height:70px}
 .plan-essencial{background:#dbeafe;color:#1d4ed8}
 .plan-profissional{background:var(--purple-xl);color:var(--purple-d)}
 .plan-empresa{background:var(--amber-bg);color:#92400e}
-.plan-business{background:#fef3c7;color:#78350f}
+.plan-empresa{background:#fef3c7;color:#78350f}
 .plan-admin{background:var(--purple);color:#fff}
 
 /* GRID HELPERS */

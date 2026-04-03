@@ -39,7 +39,7 @@ switch ($method) {
             exit;
         }
 
-        $planos = ['essencial' => 49, 'profissional' => 79, 'business' => 129];
+        $planos = ['essencial' => 49, 'profissional' => 79, 'empresa' => 129];
         $plano  = $data['plano'] ?? 'essencial';
         $preco  = $planos[$plano] ?? 49;
 
@@ -94,7 +94,7 @@ switch ($method) {
         if (!$id) { http_response_code(400); echo json_encode(['error' => 'ID obrigatório']); exit; }
         $data = json_decode(file_get_contents('php://input'), true);
 
-        $planos = ['essencial' => 49, 'profissional' => 79, 'business' => 129];
+        $planos = ['essencial' => 49, 'profissional' => 79, 'empresa' => 129];
         $plano  = $data['plano'] ?? 'essencial';
         $preco  = $planos[$plano] ?? 49;
 

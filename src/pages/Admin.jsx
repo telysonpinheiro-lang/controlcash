@@ -27,14 +27,14 @@ const WaIcon = () => (
 )
 
 const MODULOS = [
-  { label: 'Dashboard',        icon: '▣', essencial: true,  profissional: true,  business: true  },
-  { label: 'Vendas',           icon: '$', essencial: true,  profissional: true,  business: true  },
-  { label: 'Contas a Receber', icon: '↗', essencial: true,  profissional: true,  business: true  },
-  { label: 'Cadastros',        icon: '👥', essencial: true,  profissional: true,  business: true  },
-  { label: 'Contratos',        icon: '📄', essencial: false, profissional: true,  business: true  },
-  { label: 'Estoque',          icon: '📦', essencial: false, profissional: true,  business: true  },
-  { label: 'Contas a Pagar',   icon: '💳', essencial: false, profissional: false, business: true  },
-  { label: 'Inadimplência',    icon: '⚠', essencial: false, profissional: false, business: true  },
+  { label: 'Dashboard',        icon: '▣', essencial: true,  profissional: true,  empresa: true  },
+  { label: 'Vendas',           icon: '$', essencial: true,  profissional: true,  empresa: true  },
+  { label: 'Contas a Receber', icon: '↗', essencial: true,  profissional: true,  empresa: true  },
+  { label: 'Cadastros',        icon: '👥', essencial: true,  profissional: true,  empresa: true  },
+  { label: 'Contratos',        icon: '📄', essencial: false, profissional: true,  empresa: true  },
+  { label: 'Estoque',          icon: '📦', essencial: false, profissional: true,  empresa: true  },
+  { label: 'Contas a Pagar',   icon: '💳', essencial: false, profissional: false, empresa: true  },
+  { label: 'Inadimplência',    icon: '⚠', essencial: false, profissional: false, empresa: true  },
 ]
 
 function PermissoesPlano({ plano }) {
