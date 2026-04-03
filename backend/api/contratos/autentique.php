@@ -173,16 +173,21 @@ switch ($acao) {
         file_put_contents($tmpFile, $pdfContent);
 
         // Mutation GraphQL para criar documento
-        $mutation = '
+        $sandboxParam = $AUTENTIQUE_SANDBOX ? ', $sandbox: Boolean' : '';
+        $sandboxArg   = $AUTENTIQUE_SANDBOX ? ', sandbox: $sandbox' : '';
+
+        $mutation = "
             mutation CreateDocumentMutation(
-                $document: DocumentInput!,
-                $signers: [SignerInput!]!,
-                $file: Upload!
+                \$document: DocumentInput!,
+                \$signers: [SignerInput!]!,
+                \$file: Upload!
+                {$sandboxParam}
             ) {
                 createDocument(
-                    document: $document,
-                    signers: $signers,
-                    file: $file
+                    document: \$document,
+                    signers: \$signers,
+                    file: \$file
+                    {$sandboxArg}
                 ) {
                     id
                     name
@@ -196,7 +201,7 @@ switch ($acao) {
                     }
                 }
             }
-        ';
+        ";
 
         $variables = [
             'document' => [
@@ -211,9 +216,8 @@ switch ($acao) {
             ],
         ];
 
-        // Adiciona sandbox para testes
         if ($AUTENTIQUE_SANDBOX) {
-            $variables['document']['sandbox'] = true;
+            $variables['sandbox'] = true;
         }
 
         $result = autentiqueRequest($mutation, $variables, $tmpFile);
