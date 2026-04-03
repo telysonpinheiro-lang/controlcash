@@ -442,29 +442,6 @@ export default function Contratos() {
                               {c.status === 'aceito' ? 'Assinado' : 'Aguardando assinatura'}
                             </span>
                           )}
-                          {c.status !== 'aceito' && (
-                            <span className="wa-chip" onClick={e => {
-                              e.stopPropagation()
-                              const cl = clientes.find(x => x.nome === c.cliente)
-                              const tel = cl?.telefone?.replace(/\D/g, '')
-                              if (!tel) return showToast(`Telefone não cadastrado para ${c.cliente}`, 'danger')
-                              const link = c.autentique_link || `${window.location.origin}/aceite/${c.token_aceite ?? c.id}`
-                              const msg = [
-                                `Olá ${c.cliente.split(' ')[0]}! 👋`,
-                                ``,
-                                `Segue o contrato referente ao serviço *${c.servico}* no valor de *R$ ${Number(c.valor).toFixed(2).replace('.', ',')}*.`,
-                                ``,
-                                `Assine eletronicamente pelo link abaixo:`,
-                                link,
-                                ``,
-                                `Qualquer dúvida, estou à disposição!`,
-                              ].join('\n')
-                              const num = tel.length <= 11 ? '55' + tel : tel
-                              window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank')
-                            }}>
-                              <WaIcon /> WhatsApp
-                            </span>
-                          )}
                         </div>
                       </td>
                     </tr>
