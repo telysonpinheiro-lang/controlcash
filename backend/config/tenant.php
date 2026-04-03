@@ -1,0 +1,99 @@
+<?php
+/**
+ * Middleware de isolamento multi-tenant com autenticação JWT.
+ * Valida o token Bearer e extrai user ID e role do payload assinado.
+ */
+
+require_once __DIR__ . '/jwt.php';
+
+/**
+ * Autentica o usuário via JWT (Authorization: Bearer <token>).
+ * Fallback temporário para X-User-Id durante migração.
+ */
+function getCurrentUser(): array {
+    // 1. Tenta JWT (método seguro)
+    $token = getBearerToken();
+    if ($token) {
+        $payload = jwt_decode($token);
+        if ($payload && !empty($payload['sub'])) {
+            return [
+                'id'   => (int) $payload['sub'],
+                'role' => $payload['role'] ?? 'user',
+            ];
+        }
+        // Token inválido/expirado
+        http_response_code(401);
+        echo json_encode(['error' => 'Token inválido ou expirado']);
+        exit;
+    }
+
+    // 2. Fallback: header X-User-Id (compatibilidade durante migração)
+    $uid  = (int) ($_SERVER['HTTP_X_USER_ID'] ?? 0);
+    $role = trim($_SERVER['HTTP_X_USER_ROLE'] ?? 'user');
+
+    // Sanitiza role — aceita apenas valores válidos
+    if (!in_array($role, ['admin', 'user'], true)) {
+        $role = 'user';
+    }
+
+    if (!$uid) {
+        http_response_code(401);
+        echo json_encode(['error' => 'Não autenticado']);
+        exit;
+    }
+    return ['id' => $uid, 'role' => $role];
+}
+
+/**
+ * Retorna cláusula SQL de filtro por tenant usando prepared statement params.
+ * Retorna [sql, params] para uso seguro em queries.
+ */
+function tenantFilterParam(string $alias = ''): array {
+    $user = getCurrentUser();
+    if ($user['role'] === 'admin') {
+        return ['1=1', []];
+    }
+    $col = $alias ? "{$alias}.usuario_id" : 'usuario_id';
+    return ["{$col} = ?", [$user['id']]];
+}
+
+/**
+ * @deprecated Use tenantFilterParam() para queries com prepared statements.
+ * Mantido para compatibilidade — usa intval() para segurança.
+ */
+function tenantFilter(string $alias = ''): string {
+    $user = getCurrentUser();
+    if ($user['role'] === 'admin') return '1=1';
+    $col = $alias ? "{$alias}.usuario_id" : 'usuario_id';
+    $id = intval($user['id']); // Garante que é inteiro
+    return "{$col} = {$id}";
+}
+
+/**
+ * Garante que o registro pertence ao usuário atual antes de mutações.
+ * Lança 403 se não pertencer.
+ */
+function assertOwnership(PDO $pdo, string $table, int $id): void {
+    $user = getCurrentUser();
+    if ($user['role'] === 'admin') return;
+
+    // Usa whitelist de tabelas para evitar SQL injection no nome da tabela
+    $allowedTables = [
+        'vendas', 'contas_pagar', 'contas_receber', 'contratos',
+        'clientes', 'fornecedores', 'servicos', 'estoque_itens',
+        'notificacoes', 'admin_clientes', 'admin_cobrancas',
+    ];
+    if (!in_array($table, $allowedTables, true)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Tabela inválida']);
+        exit;
+    }
+
+    $stmt = $pdo->prepare("SELECT id FROM {$table} WHERE id = ? AND usuario_id = ?");
+    $stmt->execute([$id, $user['id']]);
+    if (!$stmt->fetch()) {
+        http_response_code(403);
+        echo json_encode(['error' => 'Acesso negado a este recurso']);
+        exit;
+    }
+}
