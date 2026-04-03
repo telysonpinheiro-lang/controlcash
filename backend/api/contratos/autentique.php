@@ -236,8 +236,22 @@ switch ($acao) {
             exit;
         }
 
-        // Salva ID da Autentique no contrato
-        $signLink = $doc['signatures'][0]['link']['short_link'] ?? null;
+        // Gera link de assinatura via mutation separada
+        $publicId = $doc['signatures'][0]['public_id'] ?? null;
+        $signLink = null;
+
+        if ($publicId) {
+            $linkResult = autentiqueRequest('
+                mutation {
+                    createLinkToSignature(public_id: "' . $publicId . '") {
+                        short_link
+                    }
+                }
+            ');
+            $signLink = $linkResult['createLinkToSignature']['short_link'] ?? null;
+        }
+
+        // Salva ID e link da Autentique no contrato
         $pdo->prepare('
             UPDATE contratos SET
                 autentique_id = ?,
