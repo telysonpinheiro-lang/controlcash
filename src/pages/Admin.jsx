@@ -126,15 +126,17 @@ export default function Admin() {
 
         // Envia senha temporária via WhatsApp se tiver telefone
         if (novo.temp_senha && form.telefone) {
+          const link = window.location.origin
           const msg = [
             `Olá ${form.contato.split(' ')[0]}! 👋`,
             ``,
-            `Seu acesso ao sistema foi criado.`,
+            `Seu acesso ao *ControlCA$H* foi criado com sucesso!`,
             ``,
+            `🔗 *Acesse aqui:* ${link}`,
             `🔐 *E-mail:* ${form.email_contato}`,
             `🔑 *Senha temporária:* ${novo.temp_senha}`,
             ``,
-            `Acesse o sistema e altere sua senha no primeiro login.`,
+            `Acesse o sistema e altere sua senha em *Configurações*.`,
           ].join('\n')
           abrirWhatsApp(form.telefone.replace(/\D/g, ''), msg)
         } else if (novo.temp_senha) {
@@ -151,10 +153,13 @@ export default function Admin() {
 
   function reenviarAcesso(c) {
     if (!c.telefone) return showToast('Telefone não cadastrado para este cliente', 'danger')
+    const link = window.location.origin
     const msg = [
       `Olá ${c.contato.split(' ')[0]}! 👋`,
       ``,
-      `Seu acesso ao sistema está disponível.`,
+      `Seu acesso ao *ControlCA$H* está disponível.`,
+      ``,
+      `🔗 *Acesse aqui:* ${link}`,
       `🔐 *E-mail:* ${c.email_contato}`,
       ``,
       `Caso tenha esquecido sua senha, entre em contato conosco.`,
