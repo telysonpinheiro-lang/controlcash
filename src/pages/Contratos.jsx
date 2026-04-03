@@ -391,11 +391,6 @@ export default function Contratos() {
                           <button title="Excluir" className="btn-icon btn-danger" onClick={e => { e.stopPropagation(); if (confirm(`Excluir contrato de ${c.cliente}?`)) removeContrato(c.id).catch(err => showToast(err.message, 'danger')) }}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:14,height:14}}><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
                           </button>
-                          {c.status !== 'aceito' && (
-                            <span className="wa-chip" onClick={e => { e.stopPropagation(); copiarLink(c) }}>
-                              <WaIcon /> Link
-                            </span>
-                          )}
                           {c.status !== 'aceito' && !c.autentique_id && (
                             <button title="Enviar para Autentique" className="btn btn-sm btn-outline" style={{ fontSize: 10, padding: '2px 8px' }}
                               onClick={e => { e.stopPropagation(); const cl = clientes.find(x => x.nome === c.cliente); setAutentiqueModal({ contrato: c, email: cl?.email || '' }) }}>
@@ -408,11 +403,28 @@ export default function Contratos() {
                               Verificar
                             </button>
                           )}
-                          {c.autentique_link && (
-                            <a href={c.autentique_link} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline" style={{ fontSize: 10, padding: '2px 8px' }}
-                              onClick={e => e.stopPropagation()}>
-                              Assinar
-                            </a>
+                          {c.status !== 'aceito' && (
+                            <span className="wa-chip" onClick={e => {
+                              e.stopPropagation()
+                              const cl = clientes.find(x => x.nome === c.cliente)
+                              const tel = cl?.telefone?.replace(/\D/g, '')
+                              if (!tel) return showToast(`Telefone não cadastrado para ${c.cliente}`, 'danger')
+                              const link = c.autentique_link || `${window.location.origin}/aceite/${c.token_aceite ?? c.id}`
+                              const msg = [
+                                `Olá ${c.cliente.split(' ')[0]}! 👋`,
+                                ``,
+                                `Segue o contrato referente ao serviço *${c.servico}* no valor de *R$ ${Number(c.valor).toFixed(2).replace('.', ',')}*.`,
+                                ``,
+                                `Assine eletronicamente pelo link abaixo:`,
+                                link,
+                                ``,
+                                `Qualquer dúvida, estou à disposição!`,
+                              ].join('\n')
+                              const num = tel.length <= 11 ? '55' + tel : tel
+                              window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank')
+                            }}>
+                              <WaIcon /> WhatsApp
+                            </span>
                           )}
                         </div>
                       </td>
