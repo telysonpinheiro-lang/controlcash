@@ -1,6 +1,9 @@
 import { useState, useRef } from 'react'
 import { useTheme } from '../context/ThemeContext'
 import { useToast } from '../context/ToastContext'
+import { useAuth } from '../context/AuthContext'
+
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost/virtualcore-react/backend/api'
 
 const EMPRESA_KEY = 'vc_empresa'
 const LOGO_KEY    = 'vc_logo'
@@ -48,10 +51,42 @@ const temas = [
 export default function Configuracoes() {
   const { theme, changeTheme } = useTheme()
   const { showToast } = useToast()
+  const { currentUser } = useAuth()
   const logoRef = useRef()
 
   const [empresa, setEmpresa] = useState(loadEmpresa)
   const [logo, setLogo]       = useState(() => localStorage.getItem(LOGO_KEY) ?? null)
+  const [senhaForm, setSenhaForm] = useState({ atual: '', nova: '', confirmar: '' })
+  const [senhaLoading, setSenhaLoading] = useState(false)
+
+  async function alterarSenha() {
+    if (!senhaForm.atual || !senhaForm.nova) return showToast('Preencha todos os campos', 'danger')
+    if (senhaForm.nova.length < 6) return showToast('A nova senha deve ter no mínimo 6 caracteres', 'danger')
+    if (senhaForm.nova !== senhaForm.confirmar) return showToast('As senhas não conferem', 'danger')
+
+    setSenhaLoading(true)
+    try {
+      const token = localStorage.getItem('vc_token')
+      const res = await fetch(`${API_BASE}/auth/alterar-senha.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+          'X-User-Id': String(currentUser?.id ?? ''),
+          'X-User-Role': currentUser?.role ?? 'user',
+        },
+        body: JSON.stringify({ senha_atual: senhaForm.atual, senha_nova: senhaForm.nova }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? 'Erro ao alterar senha')
+      showToast('Senha alterada com sucesso!', 'success')
+      setSenhaForm({ atual: '', nova: '', confirmar: '' })
+    } catch (e) {
+      showToast(e.message, 'danger')
+    } finally {
+      setSenhaLoading(false)
+    }
+  }
 
   function salvarEmpresa() {
     localStorage.setItem(EMPRESA_KEY, JSON.stringify(empresa))
@@ -160,6 +195,55 @@ export default function Configuracoes() {
                   )}
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Alterar Senha ── */}
+        <div className="card mb-16">
+          <div className="card-header"><div className="card-title">Alterar Senha</div></div>
+          <div style={{ padding: '16px 20px' }}>
+            <div style={{ fontSize: 13, color: 'var(--text-s)', marginBottom: 16 }}>
+              Troque sua senha temporária por uma senha fixa. A nova senha deve ter no mínimo 6 caracteres.
+            </div>
+            <div className="form-row">
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Senha atual</label>
+                <input
+                  className="form-input"
+                  type="password"
+                  value={senhaForm.atual}
+                  onChange={e => setSenhaForm({ ...senhaForm, atual: e.target.value })}
+                  placeholder="Senha atual ou temporária"
+                />
+              </div>
+            </div>
+            <div className="form-row" style={{ marginTop: 14 }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Nova senha</label>
+                <input
+                  className="form-input"
+                  type="password"
+                  value={senhaForm.nova}
+                  onChange={e => setSenhaForm({ ...senhaForm, nova: e.target.value })}
+                  placeholder="Mínimo 6 caracteres"
+                />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Confirmar nova senha</label>
+                <input
+                  className="form-input"
+                  type="password"
+                  value={senhaForm.confirmar}
+                  onChange={e => setSenhaForm({ ...senhaForm, confirmar: e.target.value })}
+                  placeholder="Repita a nova senha"
+                />
+              </div>
+            </div>
+            <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
+              <button className="btn btn-primary btn-sm" disabled={senhaLoading} onClick={alterarSenha}>
+                {senhaLoading ? 'Alterando...' : 'Alterar senha'}
+              </button>
             </div>
           </div>
         </div>
