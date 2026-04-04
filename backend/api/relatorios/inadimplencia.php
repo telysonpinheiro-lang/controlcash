@@ -48,13 +48,13 @@ foreach ($lancamentos as $l) {
         $resumo[$faixa] = ['faixa' => $faixa, 'quantidade' => 0, 'total' => 0.0];
     }
     $resumo[$faixa]['quantidade']++;
-    $resumo[$faixa]['total'] += (float) $l['valor'];
-    $totalGeral += (float) $l['valor'];
+    $resumo[$faixa]['total'] += (float) $l['valor'] + (float) ($l['valor_material'] ?? 0);
+    $totalGeral += (float) $l['valor'] + (float) ($l['valor_material'] ?? 0);
 }
 
 // Top devedores
 $topStmt = $pdo->query("
-    SELECT cliente_nome, SUM(valor) AS total_devido, COUNT(*) AS qtd_parcelas
+    SELECT cliente_nome, SUM(valor + COALESCE(valor_material,0)) AS total_devido, COUNT(*) AS qtd_parcelas
     FROM contas_receber cr
     WHERE {$filter} AND cr.status = 'vencido'
     GROUP BY cliente_nome

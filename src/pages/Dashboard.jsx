@@ -328,7 +328,14 @@ export default function Dashboard() {
                       </div>
                     </td>
                     <td>{v.servico}</td>
-                    <td className="td-bold">R$ {Number(v.valor).toFixed(2).replace('.', ',')}</td>
+                    <td className="td-bold">
+                      R$ {(Number(v.valor) + Number(v.material || 0)).toFixed(2).replace('.', ',')}
+                      {Number(v.material) > 0 && (
+                        <div style={{ fontSize: 10, fontWeight: 400, color: 'var(--text-s)' }}>
+                          serv: R$ {Number(v.valor).toFixed(2).replace('.', ',')} + mat: R$ {Number(v.material).toFixed(2).replace('.', ',')}
+                        </div>
+                      )}
+                    </td>
                     <td>{v.pagamento}</td>
                     <td><span className={`status status-${v.status}`}>{statusLabel(v.status)}</span></td>
                     <td>

@@ -22,9 +22,9 @@ export default function Receber() {
   )
   const pgReceber = usePagination(contasVisiveis)
   const vencidos = contasVisiveis.filter(c => c.status === 'vencido')
-  const totalReceber = contasVisiveis.filter(c => c.status !== 'pago').reduce((s, c) => s + Number(c.valor), 0)
-  const totalVencido = vencidos.reduce((s, c) => s + Number(c.valor), 0)
-  const totalRecebido = contasVisiveis.filter(c => c.status === 'pago').reduce((s, c) => s + Number(c.valor), 0)
+  const totalReceber  = contasVisiveis.filter(c => c.status !== 'pago').reduce((s, c) => s + Number(c.valor) + Number(c.valor_material || 0), 0)
+  const totalVencido  = vencidos.reduce((s, c) => s + Number(c.valor) + Number(c.valor_material || 0), 0)
+  const totalRecebido = contasVisiveis.filter(c => c.status === 'pago').reduce((s, c) => s + Number(c.valor) + Number(c.valor_material || 0), 0)
 
   async function arquivarConta(c) {
     try {
@@ -196,7 +196,14 @@ export default function Receber() {
                       </div>
                     </td>
                     <td>{c.referente}</td>
-                    <td className="td-bold">R$ {Number(c.valor).toFixed(2).replace('.', ',')}</td>
+                    <td className="td-bold">
+                      R$ {(Number(c.valor) + Number(c.valor_material || 0)).toFixed(2).replace('.', ',')}
+                      {Number(c.valor_material) > 0 && (
+                        <div style={{ fontSize: 10, fontWeight: 400, color: 'var(--text-s)' }}>
+                          serv: R$ {Number(c.valor).toFixed(2).replace('.', ',')} + mat: R$ {Number(c.valor_material).toFixed(2).replace('.', ',')}
+                        </div>
+                      )}
+                    </td>
                     <td>{c.vencimento}</td>
                     <td><span className="tag">{c.tipo}</span></td>
                     <td>

@@ -101,12 +101,13 @@ export default function Vendas() {
     const vencimento = v.prazo_pagamento || new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10)
     try {
       await addContaReceber({
-        cliente_id:   v.cliente_id ?? null,
-        cliente_nome: v.cliente_nome,
-        referente:    v.servico,
-        valor:        Number(v.valor),
-        vencimento:   vencimento,
-        tipo:         v.pagamento ?? 'À vista',
+        cliente_id:      v.cliente_id ?? null,
+        cliente_nome:    v.cliente_nome,
+        referente:       v.servico,
+        valor:           Number(v.valor),
+        valor_material:  Number(v.material || 0),
+        vencimento:      vencimento,
+        tipo:            v.pagamento ?? 'À vista',
       })
       showToast(`Conta a receber criada para ${v.cliente_nome} — vence em ${new Date(vencimento + 'T00:00').toLocaleDateString('pt-BR')}`, 'info')
     } catch (e) {

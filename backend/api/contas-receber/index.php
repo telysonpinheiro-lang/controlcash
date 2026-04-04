@@ -65,20 +65,21 @@ switch ($method) {
         $diasAtraso = $jaVenceu ? (int) floor((time() - strtotime($venc)) / 86400) : 0;
 
         $stmt = $pdo->prepare('
-            INSERT INTO contas_receber (usuario_id, cliente_id, cliente_nome, initials, referente, valor, vencimento, tipo, status, dias_atraso)
-            VALUES (:uid, :cliente_id, :cliente_nome, :initials, :referente, :valor, :vencimento, :tipo, :status, :dias_atraso)
+            INSERT INTO contas_receber (usuario_id, cliente_id, cliente_nome, initials, referente, valor, valor_material, vencimento, tipo, status, dias_atraso)
+            VALUES (:uid, :cliente_id, :cliente_nome, :initials, :referente, :valor, :valor_material, :vencimento, :tipo, :status, :dias_atraso)
         ');
         $stmt->execute([
-            'uid'          => $user['id'],
-            'cliente_id'   => $data['cliente_id'] ?? null,
-            'cliente_nome' => $nome,
-            'initials'     => mb_substr($initials, 0, 2),
-            'referente'    => $data['referente']  ?? null,
-            'valor'        => (float) $data['valor'],
-            'vencimento'   => $venc,
-            'tipo'         => $data['tipo']       ?? 'À vista',
-            'status'       => $statusInit,
-            'dias_atraso'  => $diasAtraso,
+            'uid'            => $user['id'],
+            'cliente_id'     => $data['cliente_id']     ?? null,
+            'cliente_nome'   => $nome,
+            'initials'       => mb_substr($initials, 0, 2),
+            'referente'      => $data['referente']       ?? null,
+            'valor'          => (float) $data['valor'],
+            'valor_material' => (float) ($data['valor_material'] ?? 0),
+            'vencimento'     => $venc,
+            'tipo'           => $data['tipo']            ?? 'À vista',
+            'status'         => $statusInit,
+            'dias_atraso'    => $diasAtraso,
         ]);
 
         $newId = $pdo->lastInsertId();

@@ -177,7 +177,14 @@ export default function Relatorios() {
                       </div>
                     </td>
                     <td>{l.referente}</td>
-                    <td className="td-bold">R$ {Number(l.valor).toFixed(2).replace('.', ',')}</td>
+                    <td className="td-bold">
+                      R$ {(Number(l.valor) + Number(l.valor_material || 0)).toFixed(2).replace('.', ',')}
+                      {Number(l.valor_material) > 0 && (
+                        <div style={{ fontSize: 10, fontWeight: 400, color: 'var(--text-s)' }}>
+                          serv: R$ {Number(l.valor).toFixed(2).replace('.', ',')} + mat: R$ {Number(l.valor_material).toFixed(2).replace('.', ',')}
+                        </div>
+                      )}
+                    </td>
                     <td>{l.vencimento}</td>
                     <td>
                       <span style={{
