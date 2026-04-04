@@ -10,11 +10,14 @@ export default function Estoque() {
   const [itens, setItens]         = useState([])
   const [loading, setLoading]     = useState(true)
   const [modalNovo, setModalNovo] = useState(false)
-  const [modalMov, setModalMov]   = useState(null)  // item selecionado para movimentação
+  const [modalMov, setModalMov]   = useState(null)
+  const [modalHist, setModalHist] = useState(null)   // item cujo histórico está aberto
+  const [historico, setHistorico] = useState([])
+  const [histLoading, setHistLoading] = useState(false)
   const [aba, setAba]             = useState('todos')
   const [form, setForm] = useState({ nome: '', categoria: '', unidade: 'un', qtd_atual: '', qtd_minima: '', custo_unit: '' })
   const [movForm, setMovForm] = useState({ tipo: 'entrada', quantidade: '', observacao: '' })
-  const [editando, setEditando] = useState(null)   // item sendo editado
+  const [editando, setEditando] = useState(null)
   const [editForm, setEditForm] = useState({})
 
   async function carregar() {
@@ -31,6 +34,26 @@ export default function Estoque() {
     ? itens.filter(i => Number(i.estoque_baixo))
     : itens
   const pgEstoque = usePagination(itensFiltrados)
+
+  async function abrirHistorico(item) {
+    setModalHist(item)
+    setHistorico([])
+    setHistLoading(true)
+    try {
+      setHistorico(await estoqueApi.historico(item.id))
+    } catch (e) { showToast('Erro ao carregar histórico', 'danger') }
+    finally { setHistLoading(false) }
+  }
+
+  async function excluirMovimento(movId) {
+    if (!confirm('Excluir este movimento? O saldo será revertido.')) return
+    try {
+      await estoqueApi.removeMovimento(movId)
+      setHistorico(prev => prev.filter(m => m.id !== movId))
+      showToast('Movimento excluído e saldo revertido', 'success')
+      carregar()
+    } catch (e) { showToast(e.message, 'danger') }
+  }
 
   async function salvarItem() {
     if (!form.nome) return showToast('Nome é obrigatório', 'danger')
@@ -181,6 +204,9 @@ export default function Estoque() {
                             onClick={() => { setModalMov(item); setMovForm({ tipo: 'saida', quantidade: '', observacao: '' }) }}>
                             − Saída
                           </button>
+                          <button className="btn btn-sm btn-outline" title="Histórico" onClick={() => abrirHistorico(item)}>
+                            Histórico
+                          </button>
                           <button className="btn-icon" title="Editar" onClick={() => abrirEdicao(item)}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:14,height:14}}>
                               <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
@@ -204,6 +230,54 @@ export default function Estoque() {
           <Pagination page={pgEstoque.page} totalPages={pgEstoque.totalPages} total={pgEstoque.total} perPage={pgEstoque.perPage} onPageChange={pgEstoque.goTo} onPerPageChange={pgEstoque.changePerPage} />
         </div>
       </div>
+
+      {/* Modal histórico */}
+      {modalHist && (
+        <Modal title={`Histórico — ${modalHist.nome}`} open={!!modalHist} onClose={() => setModalHist(null)}>
+          {histLoading ? (
+            <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-s)' }}>Carregando...</div>
+          ) : historico.length === 0 ? (
+            <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-s)', fontSize: 13 }}>Nenhuma movimentação registrada.</div>
+          ) : (
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Tipo</th><th>Qtd</th><th>Observação</th><th>Data</th><th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {historico.map(m => (
+                    <tr key={m.id}>
+                      <td>
+                        <span className={`status ${m.tipo === 'entrada' ? 'status-concluido' : 'status-vencido'}`}>
+                          {m.tipo === 'entrada' ? '↑ Entrada' : '↓ Saída'}
+                        </span>
+                      </td>
+                      <td style={{ fontWeight: 700 }}>{Number(m.quantidade)}</td>
+                      <td style={{ fontSize: 12, color: 'var(--text-s)' }}>{m.observacao || '—'}</td>
+                      <td style={{ fontSize: 12, color: 'var(--text-s)' }}>
+                        {new Date(m.criado_em).toLocaleString('pt-BR')}
+                      </td>
+                      <td>
+                        <button className="btn-icon btn-danger" title="Excluir movimento" onClick={() => excluirMovimento(m.id)}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:13,height:13}}>
+                            <polyline points="3,6 5,6 21,6"/>
+                            <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+                          </svg>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <div className="modal-footer">
+            <button className="btn btn-outline btn-sm" onClick={() => setModalHist(null)}>Fechar</button>
+          </div>
+        </Modal>
+      )}
 
       {/* Modal novo item */}
       <Modal title="Novo Item em Estoque" open={modalNovo} onClose={() => setModalNovo(false)}>

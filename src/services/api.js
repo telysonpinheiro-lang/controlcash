@@ -154,12 +154,14 @@ export const whatsappApi = {
 
 // ── Estoque ───────────────────────────────────────────────
 export const estoqueApi = {
-  list:   ()           => request('/estoque/index.php'),
-  criar:  (data)       => request('/estoque/index.php', { method: 'POST', body: JSON.stringify({ acao: 'criar', ...data }) }),
-  update: (id, data)   => request(`/estoque/index.php?id=${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
-  entrada:(id, data)   => request(`/estoque/index.php?id=${id}`, { method: 'POST', body: JSON.stringify({ acao: 'entrada', ...data }) }),
-  saida:  (id, data)   => request(`/estoque/index.php?id=${id}`, { method: 'POST', body: JSON.stringify({ acao: 'saida', ...data }) }),
-  remove: (id)         => request(`/estoque/index.php?id=${id}`, { method: 'DELETE' }),
+  list:           ()         => request('/estoque/index.php'),
+  criar:          (data)     => request('/estoque/index.php', { method: 'POST', body: JSON.stringify({ acao: 'criar', ...data }) }),
+  update:         (id, data) => request(`/estoque/index.php?id=${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  entrada:        (id, data) => request(`/estoque/index.php?id=${id}`, { method: 'POST', body: JSON.stringify({ acao: 'entrada', ...data }) }),
+  saida:          (id, data) => request(`/estoque/index.php?id=${id}`, { method: 'POST', body: JSON.stringify({ acao: 'saida', ...data }) }),
+  remove:         (id)       => request(`/estoque/index.php?id=${id}`, { method: 'DELETE' }),
+  historico:      (itemId)   => request(`/estoque/movimentos.php?estoque_id=${itemId}`),
+  removeMovimento:(id)       => request(`/estoque/movimentos.php?id=${id}`, { method: 'DELETE' }),
 }
 
 // ── Relatórios ────────────────────────────────────────────
