@@ -4,7 +4,7 @@ import { setToken } from '../services/api'
 
 const AuthContext = createContext(null)
 
-const INACTIVITY_TIMEOUT = 15 * 60 * 1000 // 15 minutos sem atividade
+const INACTIVITY_TIMEOUT = 8 * 60 * 60 * 1000 // 8 horas sem atividade
 const ACTIVITY_KEY = 'vc_last_activity'
 
 export function AuthProvider({ children }) {

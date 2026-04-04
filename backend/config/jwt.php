@@ -14,8 +14,14 @@ if (file_exists($_envBackend)) {
     }
 }
 
-define('JWT_SECRET', $_ENV['JWT_SECRET'] ?? getenv('JWT_SECRET') ?: 'fallback_dev_only_' . md5(__DIR__));
-define('JWT_EXPIRY', 3600); // 1 hora
+$_jwtSecret = $_ENV['JWT_SECRET'] ?? getenv('JWT_SECRET') ?: null;
+if (!$_jwtSecret) {
+    http_response_code(500);
+    echo json_encode(['error' => 'Configuração do servidor inválida']);
+    exit;
+}
+define('JWT_SECRET', $_jwtSecret);
+define('JWT_EXPIRY', 28800); // 8 horas
 
 function base64url_encode(string $data): string {
     return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');

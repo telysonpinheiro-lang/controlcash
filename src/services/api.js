@@ -41,7 +41,9 @@ async function request(path, options = {}) {
   if (res.status === 401 && getToken()) {
     setToken(null)
     localStorage.removeItem('vc_user')
-    window.location.reload()
+    localStorage.removeItem('vc_login_time')
+    localStorage.removeItem('vc_last_activity')
+    window.location.href = '/login'
     throw new Error('Sessão expirada. Faça login novamente.')
   }
   if (!res.ok) throw new Error(json.error ?? `Erro ${res.status}`)

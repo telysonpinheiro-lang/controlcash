@@ -1,6 +1,14 @@
 <?php
 require_once __DIR__ . '/../../config/cors.php';
 require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../config/tenant.php';
+
+$adminUser = getCurrentUser();
+if ($adminUser['role'] !== 'admin') {
+    http_response_code(403);
+    echo json_encode(['error' => 'Acesso restrito ao administrador']);
+    exit;
+}
 
 $pdo    = getConnection();
 $method = $_SERVER['REQUEST_METHOD'];

@@ -27,21 +27,10 @@ function getCurrentUser(): array {
         exit;
     }
 
-    // 2. Fallback: header X-User-Id (compatibilidade durante migração)
-    $uid  = (int) ($_SERVER['HTTP_X_USER_ID'] ?? 0);
-    $role = trim($_SERVER['HTTP_X_USER_ROLE'] ?? 'user');
-
-    // Sanitiza role — aceita apenas valores válidos
-    if (!in_array($role, ['admin', 'user'], true)) {
-        $role = 'user';
-    }
-
-    if (!$uid) {
-        http_response_code(401);
-        echo json_encode(['error' => 'Não autenticado']);
-        exit;
-    }
-    return ['id' => $uid, 'role' => $role];
+    // Não autenticado
+    http_response_code(401);
+    echo json_encode(['error' => 'Não autenticado']);
+    exit;
 }
 
 /**
