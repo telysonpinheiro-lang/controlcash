@@ -120,7 +120,7 @@ export default function Dashboard() {
         const proximo = new Date(data); proximo.setDate(data.getDate() + 1)
         const total = (vendas ?? []).reduce((s, v) => {
           const d = new Date(v.criado_em ?? v.created_at ?? 0)
-          return d >= data && d < proximo ? s + Number(v.valor) : s
+          return d >= data && d < proximo ? s + Number(v.valor) + Number(v.material || 0) : s
         }, 0)
         return { mes: label, total }
       })
@@ -128,7 +128,7 @@ export default function Dashboard() {
       barras = mesesAno().map(({ label, ano, mesIdx }) => {
         const total = (vendas ?? []).reduce((s, v) => {
           const d = new Date(v.criado_em ?? v.created_at ?? 0)
-          return d.getMonth() === mesIdx && d.getFullYear() === ano ? s + Number(v.valor) : s
+          return d.getMonth() === mesIdx && d.getFullYear() === ano ? s + Number(v.valor) + Number(v.material || 0) : s
         }, 0)
         return { mes: label, total }
       })
@@ -137,7 +137,7 @@ export default function Dashboard() {
       barras = ultimos6Meses().map(({ label, ano, mesIdx }) => {
         const total = (vendas ?? []).reduce((s, v) => {
           const d = new Date(v.criado_em ?? v.created_at ?? 0)
-          return d.getMonth() === mesIdx && d.getFullYear() === ano ? s + Number(v.valor) : s
+          return d.getMonth() === mesIdx && d.getFullYear() === ano ? s + Number(v.valor) + Number(v.material || 0) : s
         }, 0)
         return { mes: label, total }
       })
