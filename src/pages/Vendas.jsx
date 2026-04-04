@@ -347,6 +347,29 @@ export default function Vendas() {
           </div>
         </div>
 
+        {/* Resumo de totais */}
+        {(() => {
+          const ativos = vendas.filter(v => !Number(v.arquivado))
+          const totalValor    = ativos.reduce((s, v) => s + Number(v.valor || 0), 0)
+          const totalMaterial = ativos.reduce((s, v) => s + Number(v.material || 0), 0)
+          const totalGeral    = totalValor + totalMaterial
+          const fmt = n => `R$ ${n.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`
+          return (
+            <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+              {[
+                { label: 'Total Serviços', value: fmt(totalValor), color: 'var(--blue)' },
+                { label: 'Total Materiais', value: fmt(totalMaterial), color: 'var(--amber)' },
+                { label: 'Total Geral', value: fmt(totalGeral), color: 'var(--green)' },
+              ].map(({ label, value, color }) => (
+                <div key={label} style={{ flex: 1, minWidth: 160, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 16px' }}>
+                  <div style={{ fontSize: 11, color: 'var(--text-s)', marginBottom: 4 }}>{label}</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color }}>{value}</div>
+                </div>
+              ))}
+            </div>
+          )
+        })()}
+
         {/* Tabela */}
         <div className="card">
           <div className="card-header">
@@ -380,7 +403,7 @@ export default function Vendas() {
             <table>
               <thead>
                 <tr>
-                  <th>Cliente</th><th>Serviço</th><th>Valor</th><th>Material</th>
+                  <th>Cliente</th><th>Serviço</th><th>Valor</th><th>Material</th><th>Total</th>
                   <th>Pagamento</th><th>Prazo Pgto</th><th>Execução</th><th>Status</th><th>Ações</th>
                 </tr>
               </thead>
@@ -399,6 +422,9 @@ export default function Vendas() {
                       <span style={{ fontSize: 12, color: 'var(--text-s)' }}>
                         {v.material ? `R$ ${Number(v.material).toFixed(2).replace('.', ',')}` : '—'}
                       </span>
+                    </td>
+                    <td className="td-bold" style={{ color: 'var(--green)' }}>
+                      R$ {(Number(v.valor) + Number(v.material || 0)).toFixed(2).replace('.', ',')}
                     </td>
                     <td>{v.pagamento}</td>
                     <td style={{ fontSize: 12 }}>{v.prazo_pagamento ? new Date(v.prazo_pagamento + 'T00:00').toLocaleDateString('pt-BR') : '—'}</td>
