@@ -1,11 +1,14 @@
 <?php
 require_once __DIR__ . '/../../config/cors.php';
 require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../config/tenant.php';
+
+$currentUser = getCurrentUser();
+$uid         = $currentUser['id'];
 
 $pdo    = getConnection();
 $method = $_SERVER['REQUEST_METHOD'];
 $id     = isset($_GET['id']) ? (int) $_GET['id'] : null;
-$uid    = (int) ($_GET['usuario_id'] ?? $_SERVER['HTTP_X_USER_ID'] ?? 1);
 
 switch ($method) {
 

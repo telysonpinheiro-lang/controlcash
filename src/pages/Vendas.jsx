@@ -323,7 +323,14 @@ export default function Vendas() {
                     >
                       <div className="kanban-card-name">{v.cliente_nome}</div>
                       <div className="kanban-card-service">{v.servico}</div>
-                      <div className="kanban-card-value">R$ {Number(v.valor).toFixed(2).replace('.', ',')}</div>
+                      <div className="kanban-card-value">
+                        R$ {(Number(v.valor) + Number(v.material || 0)).toFixed(2).replace('.', ',')}
+                        {v.material > 0 && (
+                          <span style={{ fontSize: 10, fontWeight: 400, color: 'var(--text-s)', marginLeft: 4 }}>
+                            (mat: R$ {Number(v.material).toFixed(2).replace('.', ',')})
+                          </span>
+                        )}
+                      </div>
                       {v.data_envio && <div className="kanban-card-date">Enviado {v.data_envio}</div>}
                     </div>
                   ))}

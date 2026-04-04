@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import Modal from '../components/Modal'
 import Pagination, { usePagination } from '../components/Pagination'
@@ -7,7 +6,6 @@ import { exportCSV } from '../utils/exportCSV'
 import { estoqueApi } from '../services/api'
 
 export default function Estoque() {
-  const { currentUser } = useAuth()
   const { showToast } = useToast()
   const [itens, setItens]         = useState([])
   const [loading, setLoading]     = useState(true)
@@ -19,12 +17,10 @@ export default function Estoque() {
   const [editando, setEditando] = useState(null)   // item sendo editado
   const [editForm, setEditForm] = useState({})
 
-  const headers = { 'X-User-Id': String(currentUser?.id ?? ''), 'X-User-Role': currentUser?.role ?? 'user' }
-
   async function carregar() {
     setLoading(true)
     try {
-      setItens(await estoqueApi.list(headers))
+      setItens(await estoqueApi.list())
     } catch (e) { showToast('Erro ao carregar estoque', 'danger') }
     finally { setLoading(false) }
   }
@@ -39,7 +35,7 @@ export default function Estoque() {
   async function salvarItem() {
     if (!form.nome) return showToast('Nome é obrigatório', 'danger')
     try {
-      await estoqueApi.criar(form, headers)
+      await estoqueApi.criar(form)
       showToast('Item cadastrado!', 'success')
       setModalNovo(false)
       setForm({ nome: '', categoria: '', unidade: 'un', qtd_atual: '', qtd_minima: '', custo_unit: '' })
@@ -61,7 +57,7 @@ export default function Estoque() {
   async function salvarEdicao() {
     if (!editForm.nome) return showToast('Nome é obrigatório', 'danger')
     try {
-      const data = await estoqueApi.update(editando.id, editForm, headers)
+      const data = await estoqueApi.update(editando.id, editForm)
       setItens(prev => prev.map(i => i.id === editando.id ? { ...i, ...data } : i))
       showToast('Item atualizado!', 'success')
       setEditando(null)
@@ -71,7 +67,7 @@ export default function Estoque() {
   async function excluirItem(item) {
     if (!confirm(`Excluir "${item.nome}" do estoque?`)) return
     try {
-      await estoqueApi.remove(item.id, headers)
+      await estoqueApi.remove(item.id)
       setItens(prev => prev.filter(i => i.id !== item.id))
       showToast('Item excluído!', 'success')
     } catch (e) { showToast(e.message, 'danger') }
@@ -81,7 +77,7 @@ export default function Estoque() {
     if (!movForm.quantidade) return showToast('Quantidade obrigatória', 'danger')
     try {
       const fn = movForm.tipo === 'entrada' ? estoqueApi.entrada : estoqueApi.saida
-      const json = await fn(modalMov.id, movForm, headers)
+      const json = await fn(modalMov.id, movForm)
       if (json.error) return showToast(json.error, 'danger')
       showToast(`${movForm.tipo === 'entrada' ? 'Entrada' : 'Saída'} registrada!`, 'success')
       setModalMov(null)
