@@ -1,19 +1,22 @@
 <?php
 require_once __DIR__ . '/../../config/cors.php';
 require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../config/tenant.php';
 
 $pdo    = getConnection();
 $method = $_SERVER['REQUEST_METHOD'];
+$user   = getCurrentUser();
 
 switch ($method) {
 
     case 'GET':
-        $stmt = $pdo->query('SELECT * FROM contratos ORDER BY criado_em DESC');
-        $rows = $stmt->fetchAll();
+        $filter = tenantFilter('c');
+        $stmt   = $pdo->query("SELECT * FROM contratos c WHERE {$filter} ORDER BY c.criado_em DESC");
+        $rows   = $stmt->fetchAll();
         foreach ($rows as &$r) {
-            $r['valor']        = (float) $r['valor'];
+            $r['valor']         = (float) $r['valor'];
             $r['valor_parcela'] = (float) $r['valor_parcela'];
-            $r['parcelas']     = (int)   $r['parcelas'];
+            $r['parcelas']      = (int)   $r['parcelas'];
         }
         echo json_encode($rows);
         break;
@@ -32,10 +35,11 @@ switch ($method) {
         $valor_parcela = $parcelas > 0 ? round($valor / $parcelas, 2) : $valor;
 
         $stmt = $pdo->prepare('
-            INSERT INTO contratos (cliente_id, cliente, cpf, endereco, servico, descricao_servico, valor, parcelas, valor_parcela, prazo, garantia, status)
-            VALUES (:cliente_id, :cliente, :cpf, :endereco, :servico, :descricao_servico, :valor, :parcelas, :valor_parcela, :prazo, :garantia, "aguardando")
+            INSERT INTO contratos (usuario_id, cliente_id, cliente, cpf, endereco, servico, descricao_servico, valor, parcelas, valor_parcela, prazo, garantia, status)
+            VALUES (:usuario_id, :cliente_id, :cliente, :cpf, :endereco, :servico, :descricao_servico, :valor, :parcelas, :valor_parcela, :prazo, :garantia, "aguardando")
         ');
         $stmt->execute([
+            'usuario_id'        => $user['id'],
             'cliente_id'        => $data['cliente_id']        ?? null,
             'cliente'           => $data['cliente'],
             'cpf'               => $data['cpf']               ?? null,
@@ -58,15 +62,17 @@ switch ($method) {
         break;
 
     case 'DELETE':
-        if (!isset($_GET['id'])) { http_response_code(400); echo json_encode(['error' => 'ID obrigatório']); exit; }
-        $pdo->prepare('DELETE FROM contratos WHERE id = ?')->execute([(int) $_GET['id']]);
+        $id = isset($_GET['id']) ? (int) $_GET['id'] : null;
+        if (!$id) { http_response_code(400); echo json_encode(['error' => 'ID obrigatório']); exit; }
+        assertOwnership($pdo, 'contratos', $id);
+        $pdo->prepare('DELETE FROM contratos WHERE id = ?')->execute([$id]);
         echo json_encode(['ok' => true]);
         break;
 
-    // Editar contrato: PATCH /contratos/index.php?id=1
     case 'PATCH':
-        if (!isset($_GET['id'])) { http_response_code(400); echo json_encode(['error' => 'ID obrigatório']); exit; }
-        $id   = (int) $_GET['id'];
+        $id = isset($_GET['id']) ? (int) $_GET['id'] : null;
+        if (!$id) { http_response_code(400); echo json_encode(['error' => 'ID obrigatório']); exit; }
+        assertOwnership($pdo, 'contratos', $id);
         $data = json_decode(file_get_contents('php://input'), true);
 
         $valor         = (float) ($data['valor'] ?? 0);

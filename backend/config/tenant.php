@@ -69,8 +69,8 @@ function assertOwnership(PDO $pdo, string $table, int $id): void {
     // Usa whitelist de tabelas para evitar SQL injection no nome da tabela
     $allowedTables = [
         'vendas', 'contas_pagar', 'contas_receber', 'contratos',
-        'clientes', 'fornecedores', 'servicos', 'estoque_itens',
-        'notificacoes', 'admin_clientes', 'admin_cobrancas',
+        'clientes', 'fornecedores', 'servicos', 'estoque',
+        'notificacoes', 'admin_clientes',
     ];
     if (!in_array($table, $allowedTables, true)) {
         http_response_code(400);

@@ -9,15 +9,13 @@ $allowedOrigins = [
     'http://localhost:5174',
     'http://localhost:3000',
     'http://localhost',
+    'https://controlcash.virtualcore.com.br',
 ];
-
-// Em produção, adicione seu domínio aqui:
-// $allowedOrigins[] = 'https://app.virtualcore.com.br';
 
 if (in_array($origin, $allowedOrigins, true)) {
     header("Access-Control-Allow-Origin: {$origin}");
 } else {
-    header("Access-Control-Allow-Origin: http://localhost:5173");
+    header("Access-Control-Allow-Origin: https://controlcash.virtualcore.com.br");
 }
 
 header('Access-Control-Allow-Credentials: true');

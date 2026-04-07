@@ -30,7 +30,7 @@ export default function NotificationBell() {
   async function carregar() {
     if (!currentUser) return
     try {
-      const json = await notificacoesApi.list({ 'X-User-Id': currentUser.id, 'X-User-Role': currentUser.role })
+      const json = await notificacoesApi.list()
       setNotifsBanco(json.notificacoes ?? [])
       setNaoLidasBanco(json.nao_lidas ?? 0)
     } catch (_) {}
@@ -49,7 +49,7 @@ export default function NotificationBell() {
   }, [])
 
   async function marcarTodasLidas() {
-    await notificacoesApi.marcarTodasLidas({ 'X-User-Id': currentUser.id, 'X-User-Role': currentUser.role })
+    await notificacoesApi.marcarTodasLidas()
     setNotifsBanco(n => n.map(x => ({ ...x, lida: 1 })))
     setNaoLidasBanco(0)
   }

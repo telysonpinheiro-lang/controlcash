@@ -1,25 +1,19 @@
 <?php
 require_once __DIR__ . '/../../config/cors.php';
 require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../config/tenant.php';
 
 $pdo    = getConnection();
 $method = $_SERVER['REQUEST_METHOD'];
-
-// usuario_id vindo do header ou query (simplificado — em produção usar JWT)
-$uid = (int) ($_GET['usuario_id'] ?? $_SERVER['HTTP_X_USER_ID'] ?? 0);
-
-if (!$uid) {
-    http_response_code(401);
-    echo json_encode(['error' => 'usuario_id obrigatório']);
-    exit;
-}
+$user   = getCurrentUser();
+$uid    = $user['id'];
 
 switch ($method) {
 
     // Listar notificações do usuário
     case 'GET':
         $apenasNaoLidas = isset($_GET['nao_lidas']);
-        $sql  = 'SELECT * FROM notificacoes WHERE usuario_id = ?';
+        $sql    = 'SELECT * FROM notificacoes WHERE usuario_id = ?';
         $params = [$uid];
         if ($apenasNaoLidas) { $sql .= ' AND lida = 0'; }
         $sql .= ' ORDER BY criado_em DESC LIMIT 50';
@@ -28,7 +22,6 @@ switch ($method) {
         $stmt->execute($params);
         $rows = $stmt->fetchAll();
 
-        // Contagem de não lidas
         $countStmt = $pdo->prepare('SELECT COUNT(*) FROM notificacoes WHERE usuario_id = ? AND lida = 0');
         $countStmt->execute([$uid]);
 

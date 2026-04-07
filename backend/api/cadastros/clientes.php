@@ -1,10 +1,12 @@
 <?php
 require_once __DIR__ . '/../../config/cors.php';
 require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../config/tenant.php';
 
 $pdo    = getConnection();
 $method = $_SERVER['REQUEST_METHOD'];
 $id     = isset($_GET['id']) ? (int) $_GET['id'] : null;
+$user   = getCurrentUser();
 
 // Monta endereço completo a partir dos campos separados
 function montarEndereco($data) {
@@ -20,13 +22,15 @@ function montarEndereco($data) {
 switch ($method) {
 
     case 'GET':
-        $stmt = $pdo->query('
+        $filter = tenantFilter('c');
+        $stmt = $pdo->query("
             SELECT c.*, COUNT(v.id) AS total_servicos
             FROM clientes c
             LEFT JOIN vendas v ON v.cliente_id = c.id
+            WHERE {$filter}
             GROUP BY c.id
             ORDER BY c.nome
-        ');
+        ");
         echo json_encode($stmt->fetchAll());
         break;
 
@@ -45,19 +49,20 @@ switch ($method) {
         );
 
         $stmt = $pdo->prepare('
-            INSERT INTO clientes (nome, initials, telefone, email, endereco, rua, bairro, cidade, cep)
-            VALUES (:nome, :initials, :telefone, :email, :endereco, :rua, :bairro, :cidade, :cep)
+            INSERT INTO clientes (usuario_id, nome, initials, telefone, email, endereco, rua, bairro, cidade, cep)
+            VALUES (:usuario_id, :nome, :initials, :telefone, :email, :endereco, :rua, :bairro, :cidade, :cep)
         ');
         $stmt->execute([
-            'nome'     => $nome,
-            'initials' => mb_substr($initials, 0, 2),
-            'telefone' => $data['telefone'] ?? null,
-            'email'    => $data['email']    ?? null,
-            'endereco' => montarEndereco($data),
-            'rua'      => $data['rua']      ?? null,
-            'bairro'   => $data['bairro']   ?? null,
-            'cidade'   => $data['cidade']   ?? null,
-            'cep'      => $data['cep']      ?? null,
+            'usuario_id' => $user['id'],
+            'nome'       => $nome,
+            'initials'   => mb_substr($initials, 0, 2),
+            'telefone'   => $data['telefone'] ?? null,
+            'email'      => $data['email']    ?? null,
+            'endereco'   => montarEndereco($data),
+            'rua'        => $data['rua']      ?? null,
+            'bairro'     => $data['bairro']   ?? null,
+            'cidade'     => $data['cidade']   ?? null,
+            'cep'        => $data['cep']      ?? null,
         ]);
 
         $newId = $pdo->lastInsertId();
@@ -70,6 +75,7 @@ switch ($method) {
 
     case 'PATCH':
         if (!$id) { http_response_code(400); echo json_encode(['error' => 'ID obrigatório']); exit; }
+        assertOwnership($pdo, 'clientes', $id);
         $data = json_decode(file_get_contents('php://input'), true);
 
         $nome     = $data['nome'] ?? null;
@@ -101,7 +107,7 @@ switch ($method) {
 
     case 'DELETE':
         if (!$id) { http_response_code(400); echo json_encode(['error' => 'ID obrigatório']); exit; }
-        // Cascade: remove tudo vinculado ao cliente
+        assertOwnership($pdo, 'clientes', $id);
         $pdo->prepare('DELETE FROM contas_receber WHERE cliente_id = ?')->execute([$id]);
         $pdo->prepare('DELETE FROM contratos WHERE cliente_id = ?')->execute([$id]);
         $pdo->prepare('UPDATE vendas SET cliente_id = NULL WHERE cliente_id = ?')->execute([$id]);

@@ -137,9 +137,9 @@ export const cobrancasApi = {
 
 // ── Notificações ──────────────────────────────────────────
 export const notificacoesApi = {
-  list:             (headers) => request('/notificacoes/index.php', { headers }),
-  marcarLida:       (id, headers) => request(`/notificacoes/index.php?id=${id}`, { method: 'PUT', headers }),
-  marcarTodasLidas: (headers) => request('/notificacoes/index.php?all=1', { method: 'PUT', headers }),
+  list:             () => request('/notificacoes/index.php'),
+  marcarLida:       (id) => request(`/notificacoes/index.php?id=${id}`, { method: 'PUT' }),
+  marcarTodasLidas: () => request('/notificacoes/index.php?all=1', { method: 'PUT' }),
 }
 
 // ── WhatsApp ──────────────────────────────────────────────
