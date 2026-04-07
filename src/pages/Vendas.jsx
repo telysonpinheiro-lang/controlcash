@@ -115,68 +115,50 @@ export default function Vendas() {
     }
   }
 
-  async function handleDrop(novoStatus) {
-    if (!dragItem || dragItem.kanban_status === novoStatus) return
-    // Valida transição permitida
-    const permitidas = transicoesPermitidas[dragItem.kanban_status] ?? []
+  async function moverCard(venda, novoStatus) {
+    if (venda.kanban_status === novoStatus) return
+    const permitidas = transicoesPermitidas[venda.kanban_status] ?? []
     if (!permitidas.includes(novoStatus)) {
-      showToast(`Não é possível mover de "${statusLabels[dragItem.kanban_status]}" para "${statusLabels[novoStatus]}"`, 'danger')
-      setDragItem(null)
+      showToast(`Não é possível mover para "${statusLabels[novoStatus]}"`, 'danger')
       return
     }
     try {
-      const atualizada = await updateVenda(dragItem.id, {
-        cliente_nome:    dragItem.cliente_nome,
-        servico:         dragItem.servico,
-        valor:           dragItem.valor,
-        material:        dragItem.material,
-        pagamento:       dragItem.pagamento,
-        prazo:           dragItem.prazo,
-        prazo_pagamento: dragItem.prazo_pagamento,
+      const atualizada = await updateVenda(venda.id, {
+        cliente_nome:    venda.cliente_nome,
+        servico:         venda.servico,
+        valor:           venda.valor,
+        material:        venda.material,
+        pagamento:       venda.pagamento,
+        prazo:           venda.prazo,
+        prazo_pagamento: venda.prazo_pagamento,
         status:          novoStatus,
         kanban_status:   novoStatus,
       })
-      showToast(`${dragItem.cliente_nome} → ${statusLabels[novoStatus]}`, 'success')
-
-      const vendaRef = atualizada ?? { ...dragItem, kanban_status: novoStatus }
-
-      // Busca conta a receber pendente/vencida desta venda
+      showToast(`${venda.cliente_nome} → ${statusLabels[novoStatus]}`, 'success')
+      const vendaRef = atualizada ?? { ...venda, kanban_status: novoStatus }
       const contaExistente = (contasReceber ?? []).find(c =>
-        c.cliente_nome === dragItem.cliente_nome &&
-        c.referente === dragItem.servico &&
-        c.status !== 'pago'
+        c.cliente_nome === venda.cliente_nome && c.referente === venda.servico && c.status !== 'pago'
       )
-
       if (novoStatus === 'concluido') {
-        // CONCLUÍDO → gera conta a receber (cobrança)
         await gerarContaReceber(vendaRef)
-
       } else if (novoStatus === 'recebido') {
-        // RECEBIDO → garante que conta existe e marca como paga
         if (!contaExistente) await gerarContaReceber(vendaRef)
-        // Re-busca após possível criação
         const conta = contaExistente ?? (contasReceber ?? []).find(c =>
-          c.cliente_nome === dragItem.cliente_nome &&
-          c.referente === dragItem.servico &&
-          c.status !== 'pago'
+          c.cliente_nome === venda.cliente_nome && c.referente === venda.servico && c.status !== 'pago'
         )
-        if (conta) {
-          await confirmarRecebimento(conta.id)
-          showToast(`Pagamento de ${dragItem.cliente_nome} confirmado`, 'info')
-        }
-
+        if (conta) { await confirmarRecebimento(conta.id); showToast(`Pagamento de ${venda.cliente_nome} confirmado`, 'info') }
       } else {
-        // QUALQUER OUTRA COLUNA → remove conta pendente/vencida (cancela cobrança)
         if (contaExistente) {
-          try {
-            await removeContaReceber(contaExistente.id)
-            showToast(`Cobrança de ${dragItem.cliente_nome} removida`, 'info')
-          } catch (e) {
-            console.warn('Erro ao remover conta:', e.message)
-          }
+          try { await removeContaReceber(contaExistente.id); showToast(`Cobrança de ${venda.cliente_nome} removida`, 'info') }
+          catch (e) { console.warn('Erro ao remover conta:', e.message) }
         }
       }
     } catch (e) { showToast(e.message, 'danger') }
+  }
+
+  async function handleDrop(novoStatus) {
+    if (!dragItem) return
+    await moverCard(dragItem, novoStatus)
     setDragItem(null)
   }
 
@@ -313,28 +295,51 @@ export default function Vendas() {
                     {statusLabels[col]}
                     <span className="kanban-col-count">{cards.length}</span>
                   </div>
-                  {cardsVisiveis.map(v => (
-                    <div
-                      key={v.id}
-                      className="kanban-card"
-                      style={{ borderLeftColor: kanbanColors[col] }}
-                      draggable
-                      onDragStart={() => setDragItem(v)}
-                      onDragEnd={() => { setDragItem(null); setDragOver(null) }}
-                    >
-                      <div className="kanban-card-name">{v.cliente_nome}</div>
-                      <div className="kanban-card-service">{v.servico}</div>
-                      <div className="kanban-card-value">
-                        R$ {(Number(v.valor) + Number(v.material || 0)).toFixed(2).replace('.', ',')}
-                        {v.material > 0 && (
-                          <span style={{ fontSize: 10, fontWeight: 400, color: 'var(--text-s)', marginLeft: 4 }}>
-                            (mat: R$ {Number(v.material).toFixed(2).replace('.', ',')})
+                  {cardsVisiveis.map(v => {
+                    const permitidas = transicoesPermitidas[v.kanban_status] ?? []
+                    const idxAtual   = kanbanColunas.indexOf(v.kanban_status)
+                    const anterior   = kanbanColunas.slice(0, idxAtual).reverse().find(c => permitidas.includes(c))
+                    const proximo    = kanbanColunas.slice(idxAtual + 1).find(c => permitidas.includes(c))
+                    return (
+                      <div
+                        key={v.id}
+                        className="kanban-card"
+                        style={{ borderLeftColor: kanbanColors[col] }}
+                        draggable
+                        onDragStart={() => setDragItem(v)}
+                        onDragEnd={() => { setDragItem(null); setDragOver(null) }}
+                      >
+                        <div className="kanban-card-name">{v.cliente_nome}</div>
+                        <div className="kanban-card-service">{v.servico}</div>
+                        <div className="kanban-card-value">
+                          R$ {(Number(v.valor) + Number(v.material || 0)).toFixed(2).replace('.', ',')}
+                          {v.material > 0 && (
+                            <span style={{ fontSize: 10, fontWeight: 400, color: 'var(--text-s)', marginLeft: 4 }}>
+                              (mat: R$ {Number(v.material).toFixed(2).replace('.', ',')})
+                            </span>
+                          )}
+                        </div>
+                        {v.data_envio && <div className="kanban-card-date">Enviado {v.data_envio}</div>}
+                        <div className="kanban-card-arrows">
+                          <button
+                            className="kanban-arrow-btn"
+                            disabled={!anterior}
+                            title={anterior ? `← ${statusLabels[anterior]}` : ''}
+                            onClick={e => { e.stopPropagation(); moverCard(v, anterior) }}
+                          >←</button>
+                          <span style={{ fontSize: 10, color: 'var(--text-xs)', flex: 1, textAlign: 'center' }}>
+                            {statusLabels[v.kanban_status]}
                           </span>
-                        )}
+                          <button
+                            className="kanban-arrow-btn"
+                            disabled={!proximo}
+                            title={proximo ? `${statusLabels[proximo]} →` : ''}
+                            onClick={e => { e.stopPropagation(); moverCard(v, proximo) }}
+                          >→</button>
+                        </div>
                       </div>
-                      {v.data_envio && <div className="kanban-card-date">Enviado {v.data_envio}</div>}
-                    </div>
-                  ))}
+                    )
+                  })}
                   {cards.length === 0 && (
                     <div style={{ padding: '12px 8px', textAlign: 'center', fontSize: 11, color: 'var(--text-xs)', fontStyle: 'italic' }}>
                       {dragItem ? 'Solte aqui' : 'Nenhum serviço'}
@@ -380,19 +385,19 @@ export default function Vendas() {
 
         {/* Tabela */}
         <div className="card">
-          <div className="card-header">
+          <div className="card-header card-header-wrap">
             <div className="card-title">Todos os Serviços</div>
-            <div className="flex gap-8">
+            <div className="filtros-row">
               <input
-                className="form-input"
-                style={{ width: 200, padding: '6px 12px', fontSize: 12 }}
+                className="form-input filtro-input"
+                style={{ padding: '6px 12px', fontSize: 12 }}
                 placeholder="Buscar cliente..."
                 value={busca}
                 onChange={e => setBusca(e.target.value)}
               />
               <select
-                className="form-input"
-                style={{ width: 140, padding: '6px 12px', fontSize: 12 }}
+                className="form-input filtro-select"
+                style={{ padding: '6px 12px', fontSize: 12 }}
                 value={filtroStatus}
                 onChange={e => setFiltroStatus(e.target.value)}
               >

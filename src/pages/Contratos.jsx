@@ -4,7 +4,24 @@ import { useToast } from '../context/ToastContext'
 import Modal from '../components/Modal'
 import Pagination, { usePagination } from '../components/Pagination'
 import { contratosApi } from '../services/api'
-import { empresaContratante } from '../db/contratos'
+import { empresaContratante as _empresaStatic } from '../db/contratos'
+
+function loadEmpresaContratante() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('vc_empresa'))
+    if (saved?.nome) return {
+      nome:             saved.nome,
+      cnpj:             saved.cnpj ?? '',
+      endereco:         saved.endereco ?? '',
+      representante:    saved.representante ?? '',
+      cpf_representante:saved.cpf_representante ?? '',
+      foro:             saved.foro ?? 'Perdões/MG',
+    }
+  } catch {}
+  return _empresaStatic
+}
+
+const empresaContratante = loadEmpresaContratante()
 
 const PLACEHOLDERS = [
   ['{{cliente}}','Contratante'],['{{cpf_cliente}}','CPF/CNPJ Contratante'],['{{telefone}}','Telefone'],['{{endereco}}','Endereço Contratante'],
@@ -22,10 +39,19 @@ const WaIcon = () => (
 
 const TEMPLATE_KEY = 'vc_contrato_template'
 
+const CLAUSULAS_OPCOES = [
+  { id: 'sigilo',          label: 'Sigilo e Confidencialidade', texto: 'SIGILO E CONFIDENCIALIDADE: As partes comprometem-se a manter sigilo absoluto sobre dados, informações e acessos obtidos em razão deste contrato, sob pena de responsabilização civil e criminal.' },
+  { id: 'direitosAutorais',label: 'Direitos Autorais',          texto: 'DIREITOS AUTORAIS: Todos os materiais, criações e entregáveis produzidos pelo CONTRATADO são de sua titularidade até a quitação integral do contrato, momento em que a cessão de direitos se consolida ao CONTRATANTE.' },
+  { id: 'multaAtraso',     label: 'Multa por Atraso',           texto: 'MULTA POR ATRASO: O atraso no pagamento de qualquer parcela implicará multa moratória de 10% sobre o valor devido, acrescida de juros de 1% ao mês e correção monetária pelo índice legal aplicável.' },
+  { id: 'foro',            label: 'Foro da Comarca',            texto: `FORO: Fica eleito o Foro da Comarca de ${empresaContratante?.foro ?? 'Perdões/MG'} para dirimir quaisquer controvérsias oriundas deste contrato, com renúncia expressa a qualquer outro.` },
+]
+
+const GERADOR_VAZIO = { nome: '', cpf: '', telefone: '', endereco: '', descricao: '', valor: '', parcelas: '1', prazo: '', garantia: '90 dias', formaPagamento: 'À vista' }
+
 const TEMPLATE_PADRAO = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS
 
 CONTRATANTE: {{cliente}}{{cpf_cliente}}{{endereco}}.
-CONTRATADO: {{empresa}}, empresa inscrita no CNPJ nº {{cnpj}}, com endereço na {{endereco_empresa}}, neste ato representada por {{representante}}, CPF nº {{cpf_representante}}.
+CONTRATADO: {{empresa}}, inscrito(a) no CPF/CNPJ nº {{cnpj}}{{endereco_empresa}}{{representante}}.
 
 Têm entre si justo e contratado o seguinte:
 
@@ -124,8 +150,10 @@ function renderTemplate(template, contrato, clientesList) {
     .replace(/\{\{endereco\}\}/g, endereco ? `, com endereço em ${endereco}` : '')
     .replace(/\{\{empresa\}\}/g, empresaContratante.nome)
     .replace(/\{\{cnpj\}\}/g, empresaContratante.cnpj)
-    .replace(/\{\{endereco_empresa\}\}/g, empresaContratante.endereco ?? '')
-    .replace(/\{\{representante\}\}/g, empresaContratante.representante ?? '')
+    .replace(/\{\{endereco_empresa\}\}/g, empresaContratante.endereco ? `, com endereço em ${empresaContratante.endereco}` : '')
+    .replace(/\{\{representante\}\}/g, empresaContratante.representante
+      ? `, neste ato representada por ${empresaContratante.representante}${empresaContratante.cpf_representante ? `, CPF nº ${empresaContratante.cpf_representante}` : ''}`
+      : '')
     .replace(/\{\{cpf_representante\}\}/g, empresaContratante.cpf_representante ?? '')
     .replace(/\{\{objeto\}\}/g, contrato.descricao_servico ?? contrato.descricaoServico ?? contrato.servico ?? '')
     .replace(/\{\{valor\}\}/g, valor)
@@ -202,6 +230,30 @@ export default function Contratos() {
   const [templateImagem, setTemplateImagem] = useState(null)
   const importRef = useRef()
   const textareaRef = useRef()
+
+  // Gerador rápido
+  const [gForm, setGForm] = useState(GERADOR_VAZIO)
+  const gSet = (k, v) => setGForm(f => ({ ...f, [k]: v }))
+  const numContrato = `${new Date().getFullYear()}/${String(contratos.length + 1).padStart(3, '0')}`
+
+  const gFormAsContrato = {
+    cliente:          gForm.nome,
+    cpf:              gForm.cpf,
+    telefone:         gForm.telefone,
+    endereco:         gForm.endereco,
+    descricao_servico:gForm.descricao,
+    valor:            parseFloat(gForm.valor) || 0,
+    parcelas:         parseInt(gForm.parcelas) || 1,
+    valor_parcela:    (parseFloat(gForm.valor) || 0) / (parseInt(gForm.parcelas) || 1),
+    prazo:            gForm.prazo,
+    garantia:         gForm.garantia,
+  }
+
+  const textoGerador = renderTemplate(TEMPLATE_PADRAO, gFormAsContrato, clientes)
+
+  async function gerarPDFGerador() {
+    await gerarPDF(gFormAsContrato, TEMPLATE_PADRAO, clientes)
+  }
 
   const pgContratos = usePagination(contratos)
   const contratoPreviewed = preview ?? contratos[0]
@@ -320,19 +372,21 @@ export default function Contratos() {
   }
 
   function imprimir() {
-    if (!contratoPreviewed) return
     const conteudo = document.getElementById('contract-print-area')?.innerHTML
     if (!conteudo) return
     const w = window.open('', '_blank')
-    w.document.write(`<html><head><title>Contrato</title><style>
-      body { font-family: Arial, sans-serif; font-size: 12px; margin: 40px; color: #222; }
-      h3 { text-align: center; text-transform: uppercase; margin-bottom: 20px; }
-      p { margin-bottom: 10px; line-height: 1.6; }
-      .sig-line { margin-top: 40px; border-top: 1px solid #999; padding-top: 8px; font-size: 10px; color: #666; }
+    w.document.write(`<!DOCTYPE html><html><head><title>Contrato</title><style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: Arial, sans-serif; font-size: 12px; line-height: 1.7; color: #222; padding: 40px; }
+      p { margin-bottom: 8px; }
+      @media print {
+        body { padding: 20mm; }
+        @page { margin: 20mm; }
+      }
     </style></head><body>${conteudo}</body></html>`)
     w.document.close()
     w.focus()
-    w.print()
+    setTimeout(() => { w.print(); w.close() }, 300)
   }
 
   function salvarTemplate() {
@@ -432,105 +486,100 @@ export default function Contratos() {
       </div>
 
       <div className="content">
-        <div className="alert-box info mb-16">
-          <svg className="alert-icon" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round">
-            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
-          <div>
-            <div className="alert-title">⚠ Validade jurídica do aceite eletrônico</div>
-            <div className="alert-text">
-              O aceite registra <strong>IP + data/hora + hash SHA-256</strong> (Art. 10, MP 2.200-2/2001) — válido como evidência em disputas simples.
-              {' '}<strong>Não possui validade jurídica plena.</strong>{' '}
-              Para contratos formais, use ICP-Brasil (DocuSign, Autentique, BirdSign).
-            </div>
-          </div>
-        </div>
 
-        <div className="grid-2 mb-16">
-          {/* Prévia */}
-          <div className="card">
-            <div className="card-header">
-              <div className="card-title">Prévia do Contrato</div>
-              <div className="flex gap-8">
-                <button
-                  className="btn btn-sm btn-outline"
-                  onClick={() => contratoPreviewed ? gerarPDF(contratoPreviewed, template, clientes).catch(e => showToast(e.message, 'danger')) : showToast('Selecione um contrato', 'info')}
-                >⬇ PDF</button>
-                <button className="btn btn-sm btn-outline" onClick={imprimir}>🖨 Imprimir</button>
-                <button
-                  className="btn btn-sm btn-outline"
-                  onClick={() => contratoPreviewed ? copiarLink(contratoPreviewed) : showToast('Selecione um contrato', 'info')}
-                >🔗 Link aceite</button>
+        {/* ── Gerador Rápido ── */}
+        <div className="gerador-grid mb-16">
+
+          {/* Formulário */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+            {/* Seção 1 */}
+            <div className="card" style={{ padding: '16px 18px' }}>
+              <div className="gerador-section-title"><span className="gerador-num">1</span> Dados do Contratante</div>
+              <div className="form-group" style={{ marginBottom: 10 }}>
+                <label className="form-label">Nome / Razão Social</label>
+                <input className="form-input" value={gForm.nome} onChange={e => gSet('nome', e.target.value)} placeholder="Nome / Razão Social" />
+              </div>
+              <div className="form-row" style={{ marginBottom: 10 }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">CPF / CNPJ</label>
+                  <input className="form-input" value={gForm.cpf} onChange={e => gSet('cpf', e.target.value)} placeholder="000.000.000-00" />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Telefone</label>
+                  <input className="form-input" value={gForm.telefone} onChange={e => gSet('telefone', e.target.value)} placeholder="(00) 00000-0000" />
+                </div>
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Endereço Completo</label>
+                <input className="form-input" value={gForm.endereco} onChange={e => gSet('endereco', e.target.value)} placeholder="Rua, número, bairro, cidade" />
               </div>
             </div>
-            {contratoPreviewed ? (
-              <div className="contract-preview" id="contract-print-area">
-                <h3>CONTRATO DE PRESTAÇÃO DE SERVIÇOS</h3>
-                {textoPreview.split('\n').map((linha, i) =>
+
+            {/* Seção 2 */}
+            <div className="card" style={{ padding: '16px 18px' }}>
+              <div className="gerador-section-title"><span className="gerador-num">2</span> Detalhes do Serviço</div>
+              <div className="form-group" style={{ marginBottom: 10 }}>
+                <label className="form-label">Descrição do Serviço</label>
+                <textarea className="form-input" rows={4} style={{ resize: 'vertical' }} value={gForm.descricao} onChange={e => gSet('descricao', e.target.value)} placeholder="Descreva o serviço a ser prestado..." />
+              </div>
+              <div className="form-row" style={{ marginBottom: 10 }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Valor Total (R$)</label>
+                  <input className="form-input" type="number" value={gForm.valor} onChange={e => gSet('valor', e.target.value)} placeholder="0,00" />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Parcelas</label>
+                  <select className="form-input" value={gForm.parcelas} onChange={e => gSet('parcelas', e.target.value)}>
+                    <option value="1">À vista</option><option value="2">2×</option><option value="3">3×</option>
+                    <option value="6">6×</option><option value="12">12×</option>
+                  </select>
+                </div>
+              </div>
+              <div className="form-row" style={{ marginBottom: 10 }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Prazo de Execução</label>
+                  <input className="form-input" value={gForm.prazo} onChange={e => gSet('prazo', e.target.value)} placeholder="Ex: 02 (dois) dias" />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Garantia</label>
+                  <input className="form-input" value={gForm.garantia} onChange={e => gSet('garantia', e.target.value)} placeholder="Ex: 90 dias" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Prévia */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div className="gerador-preview-wrap">
+              <div className="gerador-preview-doc" id="contract-print-area">
+                {textoGerador.split('\n').map((linha, i) =>
                   linha.trim() === ''
                     ? <br key={i} />
-                    : <p key={i} style={{ margin: '4px 0', lineHeight: 1.6 }}>{linha}</p>
+                    : /^CLÁUSULA \d+|^CONTRATANTE:|^CONTRATADO:|^Testemunha/.test(linha.trim())
+                      ? <p key={i} style={{ margin: '6px 0', lineHeight: 1.7, fontSize: 12, fontWeight: 600 }}>{linha}</p>
+                      : <p key={i} style={{ margin: '3px 0', lineHeight: 1.7, fontSize: 12 }}>{linha}</p>
                 )}
               </div>
-            ) : (
-              <p style={{ padding: 16, color: 'var(--text-s)', fontSize: 13 }}>Selecione um contrato na lista para visualizar.</p>
-            )}
-          </div>
-
-          {/* Lista */}
-          <div className="card">
-            <div className="card-header"><div className="card-title">Contratos Gerados</div></div>
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr><th>Cliente</th><th>Serviço</th><th>Status</th><th>Ações</th></tr>
-                </thead>
-                <tbody>
-                  {pgContratos.paginated.map(c => (
-                    <tr key={c.id} style={{ cursor: 'pointer', background: contratoPreviewed?.id === c.id ? 'var(--purple-light, #f5f3ff)' : '' }} onClick={() => setPreview(c)}>
-                      <td>{c.cliente}</td>
-                      <td>{c.servico}</td>
-                      <td>
-                        <span className={`status ${c.status === 'aceito' ? 'status-concluido' : 'status-pendente'}`}>
-                          {c.status === 'aceito' ? 'Aceito' : 'Aguardando'}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="flex gap-8">
-                          <button title="Baixar PDF" className="btn-icon" onClick={e => { e.stopPropagation(); gerarPDF(c, template, clientes).catch(err => showToast(err.message, 'danger')) }}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:14,height:14}}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                          </button>
-                          <button title="Editar" className="btn-icon" onClick={e => { e.stopPropagation(); abrirEdicao(c) }}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:14,height:14}}><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                          </button>
-                          <button title="Excluir" className="btn-icon btn-danger" onClick={e => { e.stopPropagation(); if (confirm(`Excluir contrato de ${c.cliente}?`)) removeContrato(c.id).catch(err => showToast(err.message, 'danger')) }}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:14,height:14}}><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
-                          </button>
-                          {c.status !== 'aceito' && !c.autentique_id && (
-                            <button title="Enviar para assinatura via Autentique + WhatsApp" className="btn btn-sm btn-outline" style={{ fontSize: 10, padding: '2px 8px' }}
-                              disabled={autentiqueLoading === c.id}
-                              onClick={e => { e.stopPropagation(); enviarParaAutentique(c) }}>
-                              {autentiqueLoading === c.id ? 'Enviando...' : 'Autentique'}
-                            </button>
-                          )}
-                          {c.autentique_id && (
-                            <span className={`status ${c.status === 'aceito' ? 'status-concluido' : 'status-pendente'}`}
-                              style={{ cursor: c.status !== 'aceito' ? 'pointer' : 'default', fontSize: 10 }}
-                              onClick={e => { e.stopPropagation(); if (c.status !== 'aceito') verificarAssinatura(c) }}
-                              title={c.status !== 'aceito' ? 'Clique para verificar' : ''}>
-                              {c.status === 'aceito' ? 'Assinado' : 'Aguardando assinatura'}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </div>
-            <Pagination page={pgContratos.page} totalPages={pgContratos.totalPages} total={pgContratos.total} perPage={pgContratos.perPage} onPageChange={pgContratos.goTo} onPerPageChange={pgContratos.changePerPage} />
+
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn btn-primary" style={{ flex: 1, gap: 8 }} onClick={() => gerarPDFGerador().catch(e => showToast(e.message, 'danger'))}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ width: 15, height: 15 }}>
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Baixar PDF
+              </button>
+              <button className="btn btn-outline" style={{ padding: '0 14px' }} onClick={imprimir} title="Imprimir">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ width: 17, height: 17 }}>
+                  <path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
+                  <rect x="6" y="14" width="12" height="8"/>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
+
       </div>
 
       {/* Modal Contrato */}

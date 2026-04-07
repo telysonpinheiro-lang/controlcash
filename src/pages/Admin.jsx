@@ -116,7 +116,7 @@ export default function Admin() {
           telefone: form.telefone, email_contato: form.email_contato,
           plano: form.plano, setup: plano.preco * 3, recorrencia: plano.preco,
         })
-        showToast('Cliente atualizado!', 'success')
+        showToast('Usuário atualizado!', 'success')
       } else {
         const novo = await addAdminCliente({
           empresa: form.empresa, contato: form.contato, cpf_cnpj: form.cpf_cnpj,
@@ -143,7 +143,7 @@ export default function Admin() {
           showToast(`Senha temporária: ${novo.temp_senha} — copie antes de fechar!`, 'success')
         }
 
-        showToast('Cliente cadastrado! Acesso criado.', 'success')
+        showToast('Usuário cadastrado! Acesso criado.', 'success')
       }
       setModalOpen(false)
       setEditando(null)
@@ -152,7 +152,7 @@ export default function Admin() {
   }
 
   function reenviarAcesso(c) {
-    if (!c.telefone) return showToast('Telefone não cadastrado para este cliente', 'danger')
+    if (!c.telefone) return showToast('Telefone não cadastrado para este usuário', 'danger')
     const link = window.location.origin
     const msg = [
       `Olá ${c.contato.split(' ')[0]}! 👋`,
@@ -170,7 +170,7 @@ export default function Admin() {
   async function toggleStatus(c) {
     const novoStatus = c.status === 'ativo' ? 'inativo' : 'ativo'
     const label = novoStatus === 'ativo' ? 'Ativar' : 'Inativar'
-    if (!confirm(`${label} "${c.empresa}" e ${novoStatus === 'ativo' ? 'liberar' : 'bloquear'} o acesso ao sistema?`)) return
+    if (!confirm(`${label} o usuário "${c.empresa}" e ${novoStatus === 'ativo' ? 'liberar' : 'bloquear'} o acesso ao sistema?`)) return
     try {
       const atualizado = await adminApi.toggleStatus(c.id, { status: novoStatus })
       // Atualiza na lista local
@@ -185,18 +185,18 @@ export default function Admin() {
     <div id="page-admin">
       <div className="topbar">
         <div>
-          <div className="topbar-title">Clientes do Sistema</div>
+          <div className="topbar-title">Usuários do Sistema</div>
           <div className="topbar-sub">Painel administrativo · ControlCA$H by Virtual Core</div>
         </div>
         <div className="topbar-actions">
-          <button className="btn btn-primary btn-sm" onClick={abrirNovo}>+ Novo Cliente</button>
+          <button className="btn btn-primary btn-sm" onClick={abrirNovo}>+ Novo Usuário</button>
         </div>
       </div>
 
       <div className="content">
         <div className="metrics-grid">
           <div className="metric-card">
-            <div className="metric-label">Total de Clientes</div>
+            <div className="metric-label">Total de Usuários</div>
             <div className="metric-value">{adminClientes.length}</div>
             <div className="metric-delta">cadastrados</div>
           </div>
@@ -218,7 +218,7 @@ export default function Admin() {
         </div>
 
         <div className="card">
-          <div className="card-header"><div className="card-title">Clientes Cadastrados</div></div>
+          <div className="card-header"><div className="card-title">Usuários Cadastrados</div></div>
           <div className="table-wrap">
             <table>
               <thead>
@@ -255,7 +255,7 @@ export default function Admin() {
                           <EditIcon />
                         </button>
                         <button className="btn-icon btn-danger" title="Excluir"
-                          onClick={() => { if (confirm(`Excluir "${c.empresa}" e seu acesso ao sistema?`)) removeAdminCliente(c.id).catch(e => showToast(e.message, 'danger')) }}>
+                          onClick={() => { if (confirm(`Excluir o usuário "${c.empresa}" e seu acesso ao sistema?`)) removeAdminCliente(c.id).catch(e => showToast(e.message, 'danger')) }}>
                           <TrashIcon />
                         </button>
                       </div>
@@ -270,7 +270,7 @@ export default function Admin() {
       </div>
 
       <Modal
-        title={editando ? `Editar — ${editando.empresa}` : 'Novo Cliente do Sistema'}
+        title={editando ? `Editar — ${editando.empresa}` : 'Novo Usuário do Sistema'}
         open={modalOpen}
         onClose={() => { setModalOpen(false); setEditando(null); setForm(FORM_VAZIO) }}
       >

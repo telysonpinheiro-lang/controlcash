@@ -9,8 +9,13 @@ const EMPRESA_KEY = 'vc_empresa'
 const LOGO_KEY    = 'vc_logo'
 
 function loadEmpresa() {
-  try { return JSON.parse(localStorage.getItem(EMPRESA_KEY)) ?? { nome: 'ControlCA$H by Virtual Core', cnpj: '00.000.000/0001-00' } }
-  catch { return { nome: 'ControlCA$H by Virtual Core', cnpj: '00.000.000/0001-00' } }
+  try {
+    return JSON.parse(localStorage.getItem(EMPRESA_KEY)) ?? {
+      nome: '', cnpj: '', endereco: '', representante: '', cpf_representante: '', foro: 'Perdões/MG'
+    }
+  } catch {
+    return { nome: '', cnpj: '', endereco: '', representante: '', cpf_representante: '', foro: 'Perdões/MG' }
+  }
 }
 
 const temas = [
@@ -132,28 +137,38 @@ export default function Configuracoes() {
         {/* ── Empresa ── */}
         <div className="card mb-16">
           <div className="card-header"><div className="card-title">Dados da Empresa</div></div>
-          <div style={{ padding: '16px 20px' }}>
+          <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div className="form-row">
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Nome da Empresa</label>
-                <input
-                  className="form-input"
-                  value={empresa.nome}
-                  onChange={e => setEmpresa({ ...empresa, nome: e.target.value })}
-                  placeholder="Ex: ControlCA$H by Virtual Core"
-                />
+                <label className="form-label">Razão Social</label>
+                <input className="form-input" value={empresa.nome} onChange={e => setEmpresa({ ...empresa, nome: e.target.value })} placeholder="Nome da empresa ou autônomo" />
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">CNPJ</label>
-                <input
-                  className="form-input"
-                  value={empresa.cnpj}
-                  onChange={e => setEmpresa({ ...empresa, cnpj: e.target.value })}
-                  placeholder="00.000.000/0001-00"
-                />
+                <label className="form-label">CPF / CNPJ</label>
+                <input className="form-input" value={empresa.cnpj} onChange={e => setEmpresa({ ...empresa, cnpj: e.target.value })} placeholder="00.000.000/0001-00" />
               </div>
             </div>
-            <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Endereço Completo</label>
+              <input className="form-input" value={empresa.endereco ?? ''} onChange={e => setEmpresa({ ...empresa, endereco: e.target.value })} placeholder="Rua, número, bairro, cidade, CEP" />
+            </div>
+            <div className="form-row">
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Representante <span style={{ color: 'var(--text-xs)', fontWeight: 400 }}>(opcional)</span></label>
+                <input className="form-input" value={empresa.representante ?? ''} onChange={e => setEmpresa({ ...empresa, representante: e.target.value })} placeholder="Nome do representante legal" />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">CPF do Representante <span style={{ color: 'var(--text-xs)', fontWeight: 400 }}>(opcional)</span></label>
+                <input className="form-input" value={empresa.cpf_representante ?? ''} onChange={e => setEmpresa({ ...empresa, cpf_representante: e.target.value })} placeholder="000.000.000-00" />
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Foro da Comarca</label>
+                <input className="form-input" value={empresa.foro ?? ''} onChange={e => setEmpresa({ ...empresa, foro: e.target.value })} placeholder="Ex: Perdões/MG" />
+              </div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <button className="btn btn-primary btn-sm" onClick={salvarEmpresa}>Salvar dados</button>
             </div>
           </div>

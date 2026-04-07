@@ -98,6 +98,9 @@ a{text-decoration:none;color:inherit}
 /* ── CARDS ── */
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;box-shadow:var(--shadow)}
 .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.filtros-row{display:flex;align-items:center;gap:8px}
+.filtro-input{width:200px}
+.filtro-select{width:140px}
 .card-title{font-size:14px;font-weight:600;color:var(--purple-d)}
 .card-sub{font-size:12px;color:var(--text-s);margin-top:2px}
 
@@ -156,6 +159,10 @@ tr:hover td{background:var(--bg4)}
 .kanban-card-service{font-size:11px;color:var(--text-s);margin-top:2px}
 .kanban-card-value{font-size:12px;font-weight:700;color:var(--green);margin-top:5px}
 .kanban-card-date{font-size:10px;color:var(--text-xs);margin-top:2px}
+.kanban-card-arrows{display:flex;align-items:center;gap:4px;margin-top:8px;border-top:1px solid var(--border);padding-top:6px}
+.kanban-arrow-btn{background:var(--bg3);border:1px solid var(--border);border-radius:6px;width:26px;height:24px;font-size:13px;cursor:pointer;color:var(--text);display:flex;align-items:center;justify-content:center;transition:.1s;flex-shrink:0}
+.kanban-arrow-btn:hover:not(:disabled){background:var(--purple);color:#fff;border-color:var(--purple)}
+.kanban-arrow-btn:disabled{opacity:.25;cursor:not-allowed}
 
 /* ALERT */
 .alert-box{border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:14px;display:flex;align-items:flex-start;gap:12px}
@@ -207,6 +214,15 @@ textarea.form-input{resize:vertical;min-height:70px}
 .contract-preview h3{font-size:15px;font-weight:700;text-align:center;color:var(--purple-d);margin-bottom:8px}
 .contract-preview p{margin-bottom:8px}
 .contract-preview .sig-line{border-top:1px solid var(--text-s);margin-top:30px;padding-top:6px;font-size:12px;color:var(--text-s)}
+
+/* GERADOR */
+.gerador-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.gerador-section-title{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;color:var(--text);margin-bottom:14px}
+.gerador-num{width:22px;height:22px;border-radius:50%;background:var(--purple);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.gerador-clausula-item{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);padding:5px 0;cursor:pointer;border-bottom:1px solid var(--border)}
+.gerador-clausula-item:last-child{border-bottom:none}
+.gerador-preview-wrap{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px;min-height:420px;box-shadow:var(--shadow);color:#222;overflow-y:auto;max-height:70vh}
+@media(max-width:768px){.gerador-grid{grid-template-columns:1fr}}
 
 /* TAGS */
 .tag{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--bg3);color:var(--purple-d);margin-right:4px;margin-bottom:4px}
@@ -342,6 +358,11 @@ textarea.form-input{resize:vertical;min-height:70px}
   /* Modal */
   .modal{padding:16px; max-height:95vh}
   .form-row{grid-template-columns:1fr !important}
+
+  /* Filtros — empilha no mobile */
+  .card-header-wrap{flex-wrap:wrap;gap:10px}
+  .filtros-row{flex-wrap:wrap;width:100%}
+  .filtro-input,.filtro-select{flex:1;min-width:0;width:auto}
 
   /* Botões de ação */
   .topbar-actions .btn{font-size:11px; padding:6px 10px}
