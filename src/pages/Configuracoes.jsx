@@ -3,7 +3,7 @@ import { useTheme } from '../context/ThemeContext'
 import { useToast } from '../context/ToastContext'
 import { useAuth } from '../context/AuthContext'
 
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost/virtualcore-react/backend/api'
+const API_BASE = import.meta.env.VITE_API_URL ?? '/api'
 
 const EMPRESA_KEY = 'vc_empresa'
 const LOGO_KEY    = 'vc_logo'

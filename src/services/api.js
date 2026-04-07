@@ -1,7 +1,7 @@
 // Camada de serviços — todas as chamadas à API PHP ficam aqui.
 // Autenticação via JWT (Authorization: Bearer <token>).
 
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost/virtualcore-react/backend/api'
+const API_BASE = import.meta.env.VITE_API_URL ?? '/api'
 
 const TOKEN_KEY = 'vc_token'
 
@@ -166,5 +166,5 @@ export const estoqueApi = {
 
 // ── Relatórios ────────────────────────────────────────────
 export const relatoriosApi = {
-  inadimplencia: (headers) => request('/relatorios/inadimplencia.php', { headers }),
+  inadimplencia: () => request('/relatorios/inadimplencia.php'),
 }

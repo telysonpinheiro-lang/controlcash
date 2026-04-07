@@ -45,16 +45,8 @@ $pdo->exec("
     WHERE status = 'vencido'
 ");
 
-// ── 1. Limpa contas órfãs (venda não está mais em concluído) ─
-$pdo->exec("
-    DELETE cr FROM contas_receber cr
-    INNER JOIN vendas v ON v.cliente_nome = cr.cliente_nome AND v.servico = cr.referente
-    WHERE cr.status IN ('pendente','vencido')
-      AND v.kanban_status NOT IN ('concluido','recebido')
-");
-
-// ── 2. Notificações de contas vencidas ───────────────────
-// Só notifica contas vencidas cuja venda está em "concluído" (aguardando pagamento)
+// ── 1. Notificações de contas vencidas ───────────────────
+// Notifica todas as contas vencidas, independente do status do kanban
 $stmt = $pdo->prepare("
     SELECT cr.*,
            COALESCE(cl.telefone, cl2.telefone) AS telefone,
@@ -65,12 +57,6 @@ $stmt = $pdo->prepare("
     LEFT JOIN clientes cl2 ON TRIM(cl2.nome) = TRIM(cr.cliente_nome) AND cr.cliente_id IS NULL
     WHERE cr.status = 'vencido'
       AND cr.vencimento < :hoje
-      AND EXISTS (
-          SELECT 1 FROM vendas v
-          WHERE v.cliente_nome = cr.cliente_nome
-            AND v.servico = cr.referente
-            AND v.kanban_status = 'concluido'
-      )
       AND NOT EXISTS (
           SELECT 1 FROM notificacoes n
           WHERE n.referencia = CONCAT('conta_receber:', cr.id)
@@ -110,7 +96,7 @@ foreach ($vencidas as $conta) {
     echo "  [OK] {$titulo}\n";
 }
 
-// ── 3. Contas a pagar vencendo em 3 dias ─────────────────
+// ── 2. Contas a pagar vencendo em 3 dias ─────────────────
 $em3dias = date('Y-m-d', strtotime('+3 days'));
 $stmt    = $pdo->prepare("
     SELECT cp.*, u.id AS uid
@@ -143,11 +129,11 @@ foreach ($proximas as $conta) {
     echo "  [OK] Alerta: {$conta['fornecedor']}\n";
 }
 
-// ── 4. Limpeza de notificações antigas (>90 dias) ────────
+// ── 3. Limpeza de notificações antigas (>90 dias) ────────
 $limpas = $pdo->exec("DELETE FROM notificacoes WHERE lida = 1 AND criado_em < DATE_SUB(NOW(), INTERVAL 90 DAY)");
 echo "\n[LIMPEZA] {$limpas} notificação(ões) antiga(s) removida(s)\n";
 
-// ── 5. Limpeza de login_attempts antigas (>24h) ─────────
+// ── 4. Limpeza de login_attempts antigas (>24h) ─────────
 $limpasLogin = $pdo->exec("DELETE FROM login_attempts WHERE tentativa_em < DATE_SUB(NOW(), INTERVAL 24 HOUR)");
 echo "[LIMPEZA] {$limpasLogin} tentativa(s) de login antiga(s) removida(s)\n";
 

@@ -4,8 +4,7 @@ import { useToast } from '../context/ToastContext'
 import Pagination, { usePagination } from '../components/Pagination'
 import { exportCSV } from '../utils/exportCSV'
 import { exportPDF } from '../utils/exportPDF'
-
-const API = import.meta.env.VITE_API_URL ?? 'http://localhost/virtualcore-react/backend/api'
+import { relatoriosApi } from '../services/api'
 
 const CORES_FAIXA = {
   'A vencer':       'var(--blue)',
@@ -25,20 +24,13 @@ export default function Relatorios() {
   const pgLancamentos = usePagination(data?.lancamentos ?? [])
   const total = data?.total_geral ?? 0
 
-  const headers = { 'X-User-Id': currentUser?.id, 'X-User-Role': currentUser?.role }
-
   async function carregar() {
     setLoading(true)
     try {
-      const res = await fetch(
-        `${API}/relatorios/inadimplencia.php?usuario_id=${currentUser?.id}`,
-        { headers }
-      )
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.error ?? 'Erro ao carregar')
+      const json = await relatoriosApi.inadimplencia()
       setData(json)
     } catch (e) {
-      showToast('Erro ao carregar relatório', 'danger')
+      showToast(e.message || 'Erro ao carregar relatório', 'danger')
     } finally {
       setLoading(false)
     }
