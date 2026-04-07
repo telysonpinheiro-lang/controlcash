@@ -7,35 +7,38 @@ $pdo    = getConnection();
 $method = $_SERVER['REQUEST_METHOD'];
 $id     = isset($_GET['id']) ? (int) $_GET['id'] : null;
 $user   = getCurrentUser();
+$filter = tenantFilter('cr');
 
 switch ($method) {
 
     case 'GET':
-        // Primeiro: atualiza status para "vencido" em contas pendentes com vencimento passado
+        // Atualiza status para "vencido" — APENAS do tenant atual
         $pdo->exec("
-            UPDATE contas_receber
-            SET status = 'vencido',
-                dias_atraso = DATEDIFF(CURDATE(), vencimento)
-            WHERE status = 'pendente'
-              AND vencimento < CURDATE()
+            UPDATE contas_receber cr
+            SET cr.status = 'vencido',
+                cr.dias_atraso = DATEDIFF(CURDATE(), cr.vencimento)
+            WHERE cr.status = 'pendente'
+              AND cr.vencimento < CURDATE()
+              AND {$filter}
         ");
 
-        // Atualiza dias_atraso das já vencidas
         $pdo->exec("
-            UPDATE contas_receber
-            SET dias_atraso = DATEDIFF(CURDATE(), vencimento)
-            WHERE status = 'vencido'
+            UPDATE contas_receber cr
+            SET cr.dias_atraso = DATEDIFF(CURDATE(), cr.vencimento)
+            WHERE cr.status = 'vencido'
+              AND {$filter}
         ");
 
-        $stmt = $pdo->query('
+        $stmt = $pdo->query("
             SELECT cr.*,
                    COALESCE(cl.telefone, cl2.telefone) AS telefone,
-                   DATE_FORMAT(cr.vencimento, "%d/%m/%Y") AS vencimento_fmt
+                   DATE_FORMAT(cr.vencimento, '%d/%m/%Y') AS vencimento_fmt
             FROM contas_receber cr
             LEFT JOIN clientes cl  ON cr.cliente_id = cl.id
             LEFT JOIN clientes cl2 ON TRIM(cl2.nome) = TRIM(cr.cliente_nome) AND cr.cliente_id IS NULL
+            WHERE {$filter}
             ORDER BY cr.vencimento ASC
-        ');
+        ");
         $rows = $stmt->fetchAll();
         foreach ($rows as &$r) {
             $r['vencimento'] = $r['vencimento_fmt'];
@@ -58,7 +61,6 @@ switch ($method) {
             implode('', array_map(fn($p) => mb_substr($p, 0, 1), explode(' ', $nome)))
         );
 
-        // Se o vencimento já passou, já cria como "vencido"
         $venc       = $data['vencimento'];
         $jaVenceu   = strtotime($venc) < strtotime('today');
         $statusInit = $jaVenceu ? 'vencido' : 'pendente';
@@ -97,7 +99,6 @@ switch ($method) {
         echo json_encode(['ok' => true]);
         break;
 
-    // Editar conta: PATCH /contas-receber/index.php?id=1
     case 'PATCH':
         if (!$id) { http_response_code(400); echo json_encode(['error' => 'ID obrigatório']); exit; }
         assertOwnership($pdo, 'contas_receber', $id);
@@ -123,6 +124,7 @@ switch ($method) {
     // Confirmar recebimento: PUT /contas-receber/index.php?id=1
     case 'PUT':
         if (!$id) { http_response_code(400); echo json_encode(['error' => 'ID obrigatório']); exit; }
+        assertOwnership($pdo, 'contas_receber', $id);
 
         $pdo->prepare('UPDATE contas_receber SET status = "pago" WHERE id = ?')->execute([$id]);
 

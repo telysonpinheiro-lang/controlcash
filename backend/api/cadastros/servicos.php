@@ -1,14 +1,17 @@
 <?php
 require_once __DIR__ . '/../../config/cors.php';
 require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../config/tenant.php';
 
 $pdo    = getConnection();
 $method = $_SERVER['REQUEST_METHOD'];
+$user   = getCurrentUser();
 
 switch ($method) {
 
     case 'GET':
-        $stmt = $pdo->query('SELECT * FROM servicos ORDER BY nome');
+        $filter = tenantFilter();
+        $stmt   = $pdo->query("SELECT * FROM servicos WHERE {$filter} ORDER BY nome");
         echo json_encode($stmt->fetchAll());
         break;
 
@@ -25,8 +28,8 @@ switch ($method) {
         $cm     = (float) ($data['custo_min']    ?? 0);
         $margem = $vp > 0 ? (int) round((($vp - $cm) / $vp) * 100) : 0;
 
-        $stmt = $pdo->prepare('INSERT INTO servicos (nome, valor_padrao, custo_min, margem) VALUES (:nome, :vp, :cm, :margem)');
-        $stmt->execute(['nome' => $data['nome'], 'vp' => $vp, 'cm' => $cm, 'margem' => $margem]);
+        $stmt = $pdo->prepare('INSERT INTO servicos (usuario_id, nome, valor_padrao, custo_min, margem) VALUES (:uid, :nome, :vp, :cm, :margem)');
+        $stmt->execute(['uid' => $user['id'], 'nome' => $data['nome'], 'vp' => $vp, 'cm' => $cm, 'margem' => $margem]);
 
         $id   = $pdo->lastInsertId();
         $novo = $pdo->prepare('SELECT * FROM servicos WHERE id = ?');
@@ -39,14 +42,16 @@ switch ($method) {
     case 'DELETE':
         $id = isset($_GET['id']) ? (int) $_GET['id'] : null;
         if (!$id) { http_response_code(400); echo json_encode(['error' => 'ID obrigatório']); exit; }
-        // Cascade: busca nome do serviço e remove vendas/contratos/contas vinculadas
+        assertOwnership($pdo, 'servicos', $id);
+        // Cascade: remove registros vinculados ao serviço
         $s = $pdo->prepare('SELECT nome FROM servicos WHERE id = ?');
         $s->execute([$id]);
         $srv = $s->fetch();
         if ($srv) {
-            $pdo->prepare('DELETE FROM contas_receber WHERE referente = ?')->execute([$srv['nome']]);
-            $pdo->prepare('DELETE FROM contratos WHERE servico = ?')->execute([$srv['nome']]);
-            $pdo->prepare('DELETE FROM vendas WHERE servico = ?')->execute([$srv['nome']]);
+            $filter = tenantFilter();
+            $pdo->prepare("DELETE FROM contas_receber WHERE referente = ? AND {$filter}")->execute([$srv['nome']]);
+            $pdo->prepare("DELETE FROM contratos WHERE servico = ? AND {$filter}")->execute([$srv['nome']]);
+            $pdo->prepare("DELETE FROM vendas WHERE servico = ? AND {$filter}")->execute([$srv['nome']]);
         }
         $pdo->prepare('DELETE FROM servicos WHERE id = ?')->execute([$id]);
         echo json_encode(['ok' => true]);
@@ -55,6 +60,7 @@ switch ($method) {
     case 'PATCH':
         $id   = isset($_GET['id']) ? (int) $_GET['id'] : null;
         if (!$id) { http_response_code(400); echo json_encode(['error' => 'ID obrigatório']); exit; }
+        assertOwnership($pdo, 'servicos', $id);
         $data = json_decode(file_get_contents('php://input'), true);
 
         $vp     = (float) ($data['valor_padrao'] ?? 0);
