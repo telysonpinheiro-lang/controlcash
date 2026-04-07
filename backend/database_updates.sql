@@ -4,6 +4,17 @@
 
 USE virtualcore;
 
+-- ── 0. USUARIOS — colunas adicionais ─────────────────────
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS usuario   VARCHAR(80)  NULL UNIQUE AFTER email;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS plano     ENUM('essencial','profissional','business','admin') NOT NULL DEFAULT 'essencial' AFTER role;
+
+-- ── 0b. ADMIN_CLIENTES — colunas adicionais ──────────────
+ALTER TABLE admin_clientes ADD COLUMN IF NOT EXISTS cpf_cnpj        VARCHAR(20)  NULL AFTER contato;
+ALTER TABLE admin_clientes ADD COLUMN IF NOT EXISTS telefone         VARCHAR(20)  NULL AFTER cpf_cnpj;
+ALTER TABLE admin_clientes ADD COLUMN IF NOT EXISTS email_contato    VARCHAR(150) NULL AFTER telefone;
+ALTER TABLE admin_clientes ADD COLUMN IF NOT EXISTS usuario_id       INT          NULL AFTER status;
+ALTER TABLE admin_clientes ADD COLUMN IF NOT EXISTS primeiro_acesso  TINYINT(1)   DEFAULT 1 AFTER usuario_id;
+
 -- ── 1. TENANT ISOLATION ───────────────────────────────────
 -- Adiciona usuario_id às tabelas principais para filtrar dados por tenant
 

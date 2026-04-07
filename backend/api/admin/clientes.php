@@ -63,14 +63,22 @@ switch ($method) {
         if ($existente) {
             // Reutiliza usuario existente — reseta senha
             $uid = $existente['id'];
-            $pdo->prepare('UPDATE usuarios SET senha = ?, nome = ?, plano = ?, ativo = 1 WHERE id = ?')
+            $pdo->prepare('UPDATE usuarios SET senha = ?, nome = ?, plano = ? WHERE id = ?')
                 ->execute([$hash, $data['contato'], $plano, $uid]);
         } else {
-            // Cria novo usuario
-            $usuario = strtolower(explode('@', $data['email_contato'])[0]);
+            // Cria novo usuario — garante usuario único
+            $baseUsuario = preg_replace('/[^a-z0-9_]/', '', strtolower(explode('@', $data['email_contato'])[0]));
+            $usuario = $baseUsuario;
+            $sufixo  = 1;
+            while (true) {
+                $chkU = $pdo->prepare('SELECT id FROM usuarios WHERE usuario = ?');
+                $chkU->execute([$usuario]);
+                if (!$chkU->fetch()) break;
+                $usuario = $baseUsuario . $sufixo++;
+            }
             $pdo->prepare('
-                INSERT INTO usuarios (email, usuario, senha, nome, role, plano, ativo)
-                VALUES (:email, :usuario, :senha, :nome, "user", :plano, 1)
+                INSERT INTO usuarios (email, usuario, senha, nome, role, plano)
+                VALUES (:email, :usuario, :senha, :nome, "user", :plano)
             ')->execute([
                 'email'   => $data['email_contato'],
                 'usuario' => $usuario,
