@@ -418,27 +418,27 @@ export default function Vendas() {
               <tbody>
                 {pgVendas.paginated.map(v => (
                   <tr key={v.id}>
-                    <td>
+                    <td data-label="Cliente">
                       <div className="flex items-center gap-8">
                         <div className="avatar">{v.initials}</div>
                         {v.cliente_nome}
                       </div>
                     </td>
-                    <td>{v.servico}</td>
-                    <td className="td-bold">R$ {Number(v.valor).toFixed(2).replace('.', ',')}</td>
-                    <td>
+                    <td data-label="Serviço">{v.servico}</td>
+                    <td data-label="Valor" className="td-bold">R$ {Number(v.valor).toFixed(2).replace('.', ',')}</td>
+                    <td data-label="Material">
                       <span style={{ fontSize: 12, color: 'var(--text-s)' }}>
                         {v.material ? `R$ ${Number(v.material).toFixed(2).replace('.', ',')}` : '—'}
                       </span>
                     </td>
-                    <td className="td-bold" style={{ color: 'var(--green)' }}>
+                    <td data-label="Total" className="td-bold" style={{ color: 'var(--green)' }}>
                       R$ {(Number(v.valor) + Number(v.material || 0)).toFixed(2).replace('.', ',')}
                     </td>
-                    <td>{v.pagamento}</td>
-                    <td style={{ fontSize: 12 }}>{v.prazo_pagamento ? new Date(v.prazo_pagamento + 'T00:00').toLocaleDateString('pt-BR') : '—'}</td>
-                    <td>{v.prazo || '—'}</td>
-                    <td><span className={`status status-${v.status}`}>{statusLabels[v.status] || v.status}</span></td>
-                    <td>
+                    <td data-label="Pagamento">{v.pagamento}</td>
+                    <td data-label="Prazo Pgto" style={{ fontSize: 12 }}>{v.prazo_pagamento ? new Date(v.prazo_pagamento + 'T00:00').toLocaleDateString('pt-BR') : '—'}</td>
+                    <td data-label="Execução">{v.prazo || '—'}</td>
+                    <td data-label="Status"><span className={`status status-${v.status}`}>{statusLabels[v.status] || v.status}</span></td>
+                    <td data-label="Ações">
                       <div className="flex gap-8">
                         <button className="btn-icon" title="Editar" onClick={() => abrirEdicao(v)}>
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:14,height:14}}>

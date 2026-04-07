@@ -322,10 +322,22 @@ textarea.form-input{resize:vertical;min-height:70px}
     overflow-x:auto; padding-bottom:8px;
   }
 
-  /* Tabelas — scroll horizontal */
-  .table-wrap{border-radius:var(--radius)}
+  /* Tabelas — empilhadas no mobile */
+  .table-wrap{border-radius:var(--radius);overflow-x:hidden}
+  .table-wrap thead{display:none}
+  .table-wrap tbody tr{display:block;padding:10px 12px;border-bottom:1px solid var(--border)}
+  .table-wrap tbody tr:last-child{border-bottom:none}
+  .table-wrap tbody td{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:5px 0;border:none;font-size:13px;gap:8px
+  }
+  .table-wrap tbody td::before{
+    content:attr(data-label);
+    font-size:10px;font-weight:700;color:var(--text-s);
+    text-transform:uppercase;letter-spacing:.05em;flex-shrink:0
+  }
+  .table-wrap tbody td:not([data-label]){justify-content:flex-end}
   table{font-size:12px}
-  th,td{padding:8px 10px}
 
   /* Modal */
   .modal{padding:16px; max-height:95vh}
