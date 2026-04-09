@@ -4,13 +4,16 @@ import { useToast } from '../context/ToastContext'
 import Modal from '../components/Modal'
 import Pagination, { usePagination } from '../components/Pagination'
 import { exportCSV } from '../utils/exportCSV'
+import { maskValor, parseMaskedValor, numToMasked } from '../utils/masks'
+import QuickAddModal from '../components/QuickAddModal'
 
 export default function Pagar() {
-  const { contasPagar, addContaPagar, updateContaPagar, removeContaPagar, marcarPago } = useData()
+  const { contasPagar, addContaPagar, updateContaPagar, removeContaPagar, marcarPago, fornecedores } = useData()
   const { showToast } = useToast()
   const [modalOpen, setModalOpen] = useState(false)
   const [editando, setEditando] = useState(null)
   const [form, setForm] = useState({ fornecedor: '', descricao: '', valor: '', vencimento: '' })
+  const [quickAdd, setQuickAdd] = useState(false)
 
   const pgPagar = usePagination(contasPagar)
   const pendentes = contasPagar.filter(c => c.status === 'pendente')
@@ -29,7 +32,7 @@ export default function Pagar() {
 
   function abrirEdicao(c) {
     setEditando(c)
-    setForm({ fornecedor: c.fornecedor, descricao: c.descricao || '', valor: c.valor, vencimento: '' })
+    setForm({ fornecedor: c.fornecedor, descricao: c.descricao || '', valor: numToMasked(c.valor), vencimento: '' })
     setModalOpen(true)
   }
 
@@ -38,10 +41,10 @@ export default function Pagar() {
     if (!editando && !form.vencimento) return showToast('Informe a data de vencimento', 'danger')
     try {
       if (editando) {
-        await updateContaPagar(editando.id, { ...form, valor: parseFloat(form.valor) })
+        await updateContaPagar(editando.id, { ...form, valor: parseMaskedValor(form.valor) })
         showToast('Conta atualizada!', 'success')
       } else {
-        await addContaPagar({ ...form, valor: parseFloat(form.valor), status: 'pendente' })
+        await addContaPagar({ ...form, valor: parseMaskedValor(form.valor), status: 'pendente' })
         showToast('Conta lançada com sucesso!', 'success')
       }
       setModalOpen(false)
@@ -114,7 +117,7 @@ export default function Pagar() {
                   <tr key={c.id}>
                     <td className="td-bold">{c.fornecedor}</td>
                     <td>{c.descricao}</td>
-                    <td className="td-bold">R$ {c.valor.toFixed(2).replace('.', ',')}</td>
+                    <td className="td-bold">R$ {Number(c.valor).toFixed(2).replace('.', ',')}</td>
                     <td>{c.vencimento}</td>
                     <td><span className={`status status-${c.status}`}>{c.status === 'pago' ? 'Pago' : 'Pendente'}</span></td>
                     <td>
@@ -147,11 +150,17 @@ export default function Pagar() {
         <div className="form-row">
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label">Fornecedor</label>
-            <input className="form-input" value={form.fornecedor} onChange={e => setForm({ ...form, fornecedor: e.target.value })} placeholder="Nome do fornecedor" />
+            <div style={{ display: 'flex', gap: 6 }}>
+              <input className="form-input" list="lista-fornecedores" value={form.fornecedor} onChange={e => setForm({ ...form, fornecedor: e.target.value })} placeholder="Nome do fornecedor" />
+              <datalist id="lista-fornecedores">
+                {(fornecedores ?? []).map(f => <option key={f.id} value={f.nome} />)}
+              </datalist>
+              <button type="button" className="btn btn-outline btn-sm" style={{ flexShrink: 0, padding: '0 10px', fontSize: 18, lineHeight: 1 }} title="Novo fornecedor" onClick={() => setQuickAdd(true)}>+</button>
+            </div>
           </div>
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label">Valor (R$)</label>
-            <input className="form-input" type="number" value={form.valor} onChange={e => setForm({ ...form, valor: e.target.value })} />
+            <input className="form-input" inputMode="decimal" placeholder="0,00" value={form.valor} onChange={e => setForm({ ...form, valor: maskValor(e.target.value) })} />
           </div>
         </div>
         <div className="form-row" style={{ marginTop: 14 }}>
@@ -169,6 +178,13 @@ export default function Pagar() {
           <button className="btn btn-primary btn-sm" onClick={handleSubmit}>Salvar</button>
         </div>
       </Modal>
+
+      <QuickAddModal
+        type="fornecedor"
+        open={quickAdd}
+        onClose={() => setQuickAdd(false)}
+        onSaved={novo => setForm(f => ({ ...f, fornecedor: novo.nome }))}
+      />
     </div>
   )
 }

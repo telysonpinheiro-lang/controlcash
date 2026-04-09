@@ -3,7 +3,7 @@ import { useData } from '../context/DataContext'
 import { useToast } from '../context/ToastContext'
 import Modal from '../components/Modal'
 import Pagination, { usePagination } from '../components/Pagination'
-import { maskTelefone, maskCEP } from '../utils/masks'
+import { maskTelefone, maskCEP, maskValor, parseMaskedValor, numToMasked } from '../utils/masks'
 
 const EditIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -84,14 +84,14 @@ export default function Cadastros() {
 
   function abrirEdicaoServico(s) {
     setEditando(s)
-    setFormServico({ nome: s.nome, valorPadrao: s.valor_padrao ?? s.valorPadrao ?? '', custoMin: s.custo_min ?? s.custoMin ?? '' })
+    setFormServico({ nome: s.nome, valorPadrao: numToMasked(s.valor_padrao ?? s.valorPadrao ?? 0), custoMin: numToMasked(s.custo_min ?? s.custoMin ?? 0) })
     setModalServico(true)
   }
 
   async function handleSalvarServico() {
     if (!formServico.nome) return showToast('Nome é obrigatório', 'danger')
-    const vp = parseFloat(formServico.valorPadrao) || 0
-    const cm = parseFloat(formServico.custoMin) || 0
+    const vp = parseMaskedValor(formServico.valorPadrao)
+    const cm = parseMaskedValor(formServico.custoMin)
     try {
       if (editando) {
         await updateServico(editando.id, { nome: formServico.nome, valor_padrao: vp, custo_min: cm })
@@ -316,11 +316,11 @@ export default function Cadastros() {
         <div className="form-row" style={{ marginTop: 14 }}>
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label">Valor Padrão (R$)</label>
-            <input className="form-input" type="number" value={formServico.valorPadrao} onChange={e => setFormServico({ ...formServico, valorPadrao: e.target.value })} />
+            <input className="form-input" inputMode="decimal" placeholder="0,00" value={formServico.valorPadrao} onChange={e => setFormServico({ ...formServico, valorPadrao: maskValor(e.target.value) })} />
           </div>
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label">Custo Mínimo (R$)</label>
-            <input className="form-input" type="number" value={formServico.custoMin} onChange={e => setFormServico({ ...formServico, custoMin: e.target.value })} />
+            <input className="form-input" inputMode="decimal" placeholder="0,00" value={formServico.custoMin} onChange={e => setFormServico({ ...formServico, custoMin: maskValor(e.target.value) })} />
           </div>
         </div>
         <div className="modal-footer">

@@ -6,6 +6,8 @@ import Modal from '../components/Modal'
 import Pagination, { usePagination } from '../components/Pagination'
 import WaButton from '../components/WaButton'
 import { exportCSV } from '../utils/exportCSV'
+import { maskValor, parseMaskedValor, numToMasked } from '../utils/masks'
+import QuickAddModal from '../components/QuickAddModal'
 
 export default function Receber() {
   const { contasReceber, addContaReceber, updateContaReceber, removeContaReceber, confirmarRecebimento, clientes, vendas, updateVenda } = useData()
@@ -16,6 +18,7 @@ export default function Receber() {
   const [form, setForm] = useState({ cliente: '', referente: '', valor: '', vencimento: '', tipo: 'À vista' })
 
   const [mostrarArquivados, setMostrarArquivados] = useState(false)
+  const [quickAdd, setQuickAdd] = useState(false)
 
   const contasVisiveis = contasReceber.filter(c =>
     mostrarArquivados ? Number(c.arquivado) : !Number(c.arquivado)
@@ -42,7 +45,7 @@ export default function Receber() {
 
   function abrirEdicao(c) {
     setEditando(c)
-    setForm({ cliente: c.cliente_nome, referente: c.referente || '', valor: c.valor, vencimento: '', tipo: c.tipo || 'À vista' })
+    setForm({ cliente: c.cliente_nome, referente: c.referente || '', valor: numToMasked(c.valor), vencimento: '', tipo: c.tipo || 'À vista' })
     setModalOpen(true)
   }
 
@@ -54,7 +57,7 @@ export default function Receber() {
         await updateContaReceber(editando.id, {
           cliente_nome: form.cliente,
           referente:    form.referente,
-          valor:        parseFloat(form.valor),
+          valor:        parseMaskedValor(form.valor),
           vencimento:   form.vencimento || editando.vencimento,
           tipo:         form.tipo,
         })
@@ -65,7 +68,7 @@ export default function Receber() {
           cliente_id:   clienteObj?.id ?? null,
           cliente_nome: form.cliente,
           referente:    form.referente,
-          valor:        parseFloat(form.valor),
+          valor:        parseMaskedValor(form.valor),
           vencimento:   form.vencimento,
           tipo:         form.tipo,
           status:       'pendente',
@@ -260,14 +263,17 @@ export default function Receber() {
         <div className="form-row">
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label">Cliente</label>
-            <select className="form-input" value={form.cliente} onChange={e => setForm({ ...form, cliente: e.target.value })}>
-              <option value="">Selecione...</option>
-              {clientes.map(c => <option key={c.id}>{c.nome}</option>)}
-            </select>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <select className="form-input" value={form.cliente} onChange={e => setForm({ ...form, cliente: e.target.value })}>
+                <option value="">Selecione...</option>
+                {clientes.map(c => <option key={c.id}>{c.nome}</option>)}
+              </select>
+              <button type="button" className="btn btn-outline btn-sm" style={{ flexShrink: 0, padding: '0 10px', fontSize: 18, lineHeight: 1 }} title="Novo cliente" onClick={() => setQuickAdd(true)}>+</button>
+            </div>
           </div>
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label">Valor (R$)</label>
-            <input className="form-input" type="number" value={form.valor} onChange={e => setForm({ ...form, valor: e.target.value })} />
+            <input className="form-input" inputMode="decimal" placeholder="0,00" value={form.valor} onChange={e => setForm({ ...form, valor: maskValor(e.target.value) })} />
           </div>
         </div>
         <div className="form-row" style={{ marginTop: 14 }}>
@@ -285,6 +291,13 @@ export default function Receber() {
           <button className="btn btn-primary btn-sm" onClick={handleSubmit}>Salvar</button>
         </div>
       </Modal>
+
+      <QuickAddModal
+        type="cliente"
+        open={quickAdd}
+        onClose={() => setQuickAdd(false)}
+        onSaved={novo => setForm(f => ({ ...f, cliente: novo.nome }))}
+      />
     </div>
   )
 }

@@ -37,3 +37,11 @@ export function maskValor(v) {
   const num = (parseInt(n) / 100).toFixed(2)
   return num.replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.')
 }
+
+export function parseMaskedValor(v) {
+  return parseFloat((v || '').toString().replace(/\./g, '').replace(',', '.')) || 0
+}
+
+export function numToMasked(n) {
+  return maskValor(String(Math.round(Number(n || 0) * 100)))
+}

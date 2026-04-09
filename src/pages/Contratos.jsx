@@ -5,6 +5,7 @@ import Modal from '../components/Modal'
 import Pagination, { usePagination } from '../components/Pagination'
 import { contratosApi } from '../services/api'
 import { empresaContratante as _empresaStatic } from '../db/contratos'
+import { maskValor, parseMaskedValor, numToMasked } from '../utils/masks'
 
 function loadEmpresaContratante() {
   try {
@@ -242,9 +243,9 @@ export default function Contratos() {
     telefone:         gForm.telefone,
     endereco:         gForm.endereco,
     descricao_servico:gForm.descricao,
-    valor:            parseFloat(gForm.valor) || 0,
+    valor:            parseMaskedValor(gForm.valor),
     parcelas:         parseInt(gForm.parcelas) || 1,
-    valor_parcela:    (parseFloat(gForm.valor) || 0) / (parseInt(gForm.parcelas) || 1),
+    valor_parcela:    parseMaskedValor(gForm.valor) / (parseInt(gForm.parcelas) || 1),
     prazo:            gForm.prazo,
     garantia:         gForm.garantia,
   }
@@ -332,7 +333,7 @@ export default function Contratos() {
 
   function abrirEdicao(c) {
     setEditando(c)
-    setForm({ cliente: c.cliente, servico: c.servico, valor: c.valor, parcelas: String(c.parcelas), prazo: c.prazo || '', garantia: c.garantia || '' })
+    setForm({ cliente: c.cliente, servico: c.servico, valor: numToMasked(c.valor), parcelas: String(c.parcelas), prazo: c.prazo || '', garantia: c.garantia || '' })
     setModalOpen(true)
   }
 
@@ -343,7 +344,7 @@ export default function Contratos() {
         cliente: form.cliente,
         servico: form.servico,
         descricao_servico: form.servico,
-        valor: parseFloat(form.valor) || 0,
+        valor: parseMaskedValor(form.valor),
         parcelas: parseInt(form.parcelas),
         prazo: form.prazo,
         garantia: form.garantia,
@@ -526,7 +527,7 @@ export default function Contratos() {
               <div className="form-row" style={{ marginBottom: 10 }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Valor Total (R$)</label>
-                  <input className="form-input" type="number" value={gForm.valor} onChange={e => gSet('valor', e.target.value)} placeholder="0,00" />
+                  <input className="form-input" inputMode="decimal" placeholder="0,00" value={gForm.valor} onChange={e => gSet('valor', maskValor(e.target.value))} />
                 </div>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Parcelas</label>
@@ -603,7 +604,7 @@ export default function Contratos() {
         <div className="form-row" style={{ marginTop: 14 }}>
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label">Valor (R$)</label>
-            <input className="form-input" type="number" value={form.valor} onChange={e => setForm({ ...form, valor: e.target.value })} />
+            <input className="form-input" inputMode="decimal" placeholder="0,00" value={form.valor} onChange={e => setForm({ ...form, valor: maskValor(e.target.value) })} />
           </div>
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label">Parcelas</label>

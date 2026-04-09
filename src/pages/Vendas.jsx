@@ -4,7 +4,8 @@ import { useToast } from '../context/ToastContext'
 import Modal from '../components/Modal'
 import Pagination, { usePagination } from '../components/Pagination'
 import WaButton, { abrirWhatsApp } from '../components/WaButton'
-import { maskTelefone } from '../utils/masks'
+import { maskTelefone, maskValor, parseMaskedValor, numToMasked } from '../utils/masks'
+import QuickAddModal from '../components/QuickAddModal'
 import { kanbanColunas, statusLabels, transicoesPermitidas } from '../db/vendas'
 import { exportCSV } from '../utils/exportCSV'
 
@@ -57,6 +58,7 @@ export default function Vendas() {
     cliente: '', tipo: 'Venda', servico: '', valor: '', pagamento: 'À vista',
     prazo_pagamento: '', prazo: '', material: '',
   })
+  const [quickAdd, setQuickAdd] = useState(null) // 'cliente' | 'servico'
 
   const KANBAN_PER_PAGE = 5
 
@@ -192,10 +194,10 @@ export default function Vendas() {
     setEditando(v)
     setForm({
       cliente: v.cliente_nome, tipo: 'Venda', servico: v.servico,
-      valor: v.valor, pagamento: v.pagamento || 'À vista',
+      valor: numToMasked(v.valor), pagamento: v.pagamento || 'À vista',
       prazo_pagamento: v.prazo_pagamento || '', prazo: v.prazo || '',
       prazo_qtd: (v.prazo ?? '').split(' ')[0] || '', prazo_tipo: (v.prazo ?? '').split(' ').slice(1).join(' ') || 'dias',
-      material: v.material || '',
+      material: v.material ? numToMasked(v.material) : '',
     })
     setModalOpen(true)
   }
@@ -209,8 +211,8 @@ export default function Vendas() {
         const atualizada = await updateVenda(editando.id, {
           cliente_nome:    form.cliente,
           servico:         form.servico,
-          valor:           parseFloat(form.valor) || 0,
-          material:        parseFloat(form.material) || null,
+          valor:           parseMaskedValor(form.valor) || 0,
+          material:        parseMaskedValor(form.material) || null,
           pagamento:       form.pagamento,
           prazo_pagamento: form.prazo_pagamento || null,
           prazo:           form.prazo,
@@ -227,8 +229,8 @@ export default function Vendas() {
           cliente_id:      clienteObj?.id ?? null,
           cliente_nome:    form.cliente,
           servico:         form.servico,
-          valor:           parseFloat(form.valor) || 0,
-          material:        parseFloat(form.material) || null,
+          valor:           parseMaskedValor(form.valor) || 0,
+          material:        parseMaskedValor(form.material) || null,
           pagamento:       form.pagamento,
           prazo_pagamento: form.prazo_pagamento || null,
           prazo:           form.prazo,
@@ -455,22 +457,23 @@ export default function Vendas() {
                           <WaIcon /> WhatsApp
                         </span>
                         {Number(v.arquivado) ? (
-                          <button className="btn-icon" title="Desarquivar" onClick={() => desarquivarVenda(v)}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:14,height:14}}>
-                              <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
-                            </svg>
-                          </button>
+                          <>
+                            <button className="btn-icon" title="Desarquivar" onClick={() => desarquivarVenda(v)}>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:14,height:14}}>
+                                <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+                              </svg>
+                            </button>
+                            <button className="btn-icon btn-danger" title="Excluir" onClick={() => { if (confirm(`Excluir venda de ${v.cliente_nome}?`)) removeVenda(v.id).catch(e => showToast(e.message, 'danger')) }}>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:14,height:14}}><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+                            </button>
+                          </>
                         ) : v.kanban_status === 'recebido' ? (
                           <button className="btn-icon" title="Arquivar" style={{color:'var(--amber)'}} onClick={() => arquivarVenda(v)}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:14,height:14}}>
                               <path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/>
                             </svg>
                           </button>
-                        ) : (
-                          <button className="btn-icon btn-danger" title="Excluir" onClick={() => { if (confirm(`Excluir venda de ${v.cliente_nome}?`)) removeVenda(v.id).catch(e => showToast(e.message, 'danger')) }}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:14,height:14}}><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
-                          </button>
-                        )}
+                        ) : null}
                       </div>
                     </td>
                   </tr>
@@ -527,10 +530,13 @@ export default function Vendas() {
         <div className="form-row">
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label">Cliente</label>
-            <select className="form-input" value={form.cliente} onChange={e => setForm({ ...form, cliente: e.target.value })}>
-              <option value="">Selecione...</option>
-              {clientes.map(c => <option key={c.id}>{c.nome}</option>)}
-            </select>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <select className="form-input" value={form.cliente} onChange={e => setForm({ ...form, cliente: e.target.value })}>
+                <option value="">Selecione...</option>
+                {clientes.map(c => <option key={c.id}>{c.nome}</option>)}
+              </select>
+              <button type="button" className="btn btn-outline btn-sm" style={{ flexShrink: 0, padding: '0 10px', fontSize: 18, lineHeight: 1 }} title="Novo cliente" onClick={() => setQuickAdd('cliente')}>+</button>
+            </div>
           </div>
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label">Tipo</label>
@@ -542,14 +548,17 @@ export default function Vendas() {
         <div className="form-row" style={{ marginTop: 14 }}>
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label">Serviço</label>
-            <select className="form-input" value={form.servico} onChange={e => setForm({ ...form, servico: e.target.value })}>
-              <option value="">Selecione...</option>
-              {servicos.map(s => <option key={s.id}>{s.nome}</option>)}
-            </select>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <select className="form-input" value={form.servico} onChange={e => setForm({ ...form, servico: e.target.value })}>
+                <option value="">Selecione...</option>
+                {servicos.map(s => <option key={s.id}>{s.nome}</option>)}
+              </select>
+              <button type="button" className="btn btn-outline btn-sm" style={{ flexShrink: 0, padding: '0 10px', fontSize: 18, lineHeight: 1 }} title="Novo serviço" onClick={() => setQuickAdd('servico')}>+</button>
+            </div>
           </div>
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label">Valor (R$)</label>
-            <input className="form-input" type="number" value={form.valor} onChange={e => setForm({ ...form, valor: e.target.value })} />
+            <input className="form-input" inputMode="decimal" placeholder="0,00" value={form.valor} onChange={e => setForm({ ...form, valor: maskValor(e.target.value) })} />
           </div>
         </div>
         <div className="form-row" style={{ marginTop: 14 }}>
@@ -582,7 +591,7 @@ export default function Vendas() {
           </div>
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label">Custo Material (R$)</label>
-            <input className="form-input" type="number" value={form.material} onChange={e => setForm({ ...form, material: e.target.value })} placeholder="Opcional" />
+            <input className="form-input" inputMode="decimal" placeholder="0,00 (Opcional)" value={form.material} onChange={e => setForm({ ...form, material: maskValor(e.target.value) })} />
           </div>
         </div>
         <div className="modal-footer">
@@ -590,6 +599,16 @@ export default function Vendas() {
           <button className="btn btn-primary btn-sm" onClick={handleSubmit}>Salvar</button>
         </div>
       </Modal>
+
+      <QuickAddModal
+        type={quickAdd}
+        open={!!quickAdd}
+        onClose={() => setQuickAdd(null)}
+        onSaved={novo => {
+          if (quickAdd === 'cliente') setForm(f => ({ ...f, cliente: novo.nome }))
+          if (quickAdd === 'servico') setForm(f => ({ ...f, servico: novo.nome }))
+        }}
+      />
     </div>
   )
 }
