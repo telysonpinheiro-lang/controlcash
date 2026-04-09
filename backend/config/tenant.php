@@ -39,9 +39,6 @@ function getCurrentUser(): array {
  */
 function tenantFilterParam(string $alias = ''): array {
     $user = getCurrentUser();
-    if ($user['role'] === 'admin') {
-        return ['1=1', []];
-    }
     $col = $alias ? "{$alias}.usuario_id" : 'usuario_id';
     return ["{$col} = ?", [$user['id']]];
 }
@@ -52,7 +49,6 @@ function tenantFilterParam(string $alias = ''): array {
  */
 function tenantFilter(string $alias = ''): string {
     $user = getCurrentUser();
-    if ($user['role'] === 'admin') return '1=1';
     $col = $alias ? "{$alias}.usuario_id" : 'usuario_id';
     $id = intval($user['id']); // Garante que é inteiro
     return "{$col} = {$id}";
@@ -64,7 +60,6 @@ function tenantFilter(string $alias = ''): string {
  */
 function assertOwnership(PDO $pdo, string $table, int $id): void {
     $user = getCurrentUser();
-    if ($user['role'] === 'admin') return;
 
     // Usa whitelist de tabelas para evitar SQL injection no nome da tabela
     $allowedTables = [
